@@ -1043,8 +1043,8 @@ class MainWindow(QMainWindow, WindowMixin):
         if unicodeFilePath and len(self.mImgList) > 0:
             if unicodeFilePath in self.mImgList:
                 index = self.mImgList.index(unicodeFilePath)
-                modelIndex = self.explorer.listView.model().index(0, 0)
-                # self.explorer.listView.setCurrentIndex(modelIndex)
+                fileWidgetItem = self.explorer.listView.item(index)
+                fileWidgetItem.setSelected(True)
             else:
                 self.mImgList.clear()
 
@@ -1264,7 +1264,6 @@ class MainWindow(QMainWindow, WindowMixin):
         else:
             targetDirPath = ustr(defaultOpenDirPath)
         self.lastOpenDir = targetDirPath
-        self.explorer.setRootPath(self.lastOpenDir)
         self.importDirImages(targetDirPath)
 
     def importDirImages(self, dirpath):
@@ -1276,6 +1275,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.filePath = None
         # self.explorer.listView.model().clear()
         self.mImgList = self.scanAllImages(dirpath)
+        self.explorer.SetListViewmodel(self.mImgList)
+        self.explorer.setRootPath(self.lastOpenDir)
         self.openNextImg()
         # for imgPath in self.mImgList:
         #     item = QListWidgetItem(imgPath)

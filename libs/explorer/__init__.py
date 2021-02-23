@@ -3,6 +3,7 @@ from PyQt5.QtCore import Qt
 from .TreeVeiwExplorer import TreeView
 from .ListVeiwExplorer import ListView
 from .DirectoryUtils import getExt
+from .WidgetListView import WidgetListView, ImagesModel 
 
 class ExplorerDoc(QDockWidget):
 
@@ -14,11 +15,15 @@ class ExplorerDoc(QDockWidget):
     ):
         super().__init__()
         self.treeView = TreeView(parent=self, onDoubleClicked=self.onTreeViewDoubleClicked)#, onExpand=)
-        self.listView = ListView(parent=self, onClicked=onListViewItemClicked)#, onClick=)
+        self.listView = WidgetListView(parent=self, onClicked=onListViewItemClicked)#, onClick=)
         self.setParent(parent)
         self.setWindowTitle(name)
         self._organizeLayout()
         
+    def SetListViewmodel(self, paths):
+        model = ImagesModel(paths=paths)
+        self.listView.setModel(model)
+
     @property
     def allowedExt(self):
         return ['jpeg', 'png']
@@ -32,7 +37,7 @@ class ExplorerDoc(QDockWidget):
 
     def setRootPath(self, path):
         self.treeView.setRootPath(path)
-        self.listView.setRootPath(path)
+        # self.listView.setRootPath(path)
         self._organizeLayout()
 
     def onTreeViewDoubleClicked(self, filename, filepath):
