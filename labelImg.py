@@ -48,6 +48,7 @@ from libs.create_ml_io import CreateMLReader
 from libs.create_ml_io import JSON_EXT
 from libs.ustr import ustr
 from libs.hashableQListWidgetItem import HashableQListWidgetItem
+from libs.explorer import ExplorerDoc 
 
 __appname__ = 'labelImg'
 
@@ -194,13 +195,22 @@ class MainWindow(QMainWindow, WindowMixin):
         self.canvas.selectionChanged.connect(self.shapeSelectionChanged)
         self.canvas.drawingPolygon.connect(self.toggleDrawingSensitive)
 
+        # Create explorer
+        self.explorer = ExplorerDoc(parent=self)
+        self.explorer.setRootPath('/media/mohammad/ExternalStorage/Git repositories/keras-retinanet/Dataset')
+
+
         self.setCentralWidget(scroll)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.filedock)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.explorer)
         self.filedock.setFeatures(QDockWidget.DockWidgetFloatable)
 
         self.dockFeatures = QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetFloatable
         self.dock.setFeatures(self.dock.features() ^ self.dockFeatures)
+
+
+
 
         # Actions
         action = partial(newAction, self)
