@@ -162,17 +162,6 @@ class MainWindow(QMainWindow, WindowMixin):
         self.dock.setObjectName(getStr('labels'))
         self.dock.setWidget(labelListContainer)
 
-        self.fileListWidget = QListWidget()
-        self.fileListWidget.itemDoubleClicked.connect(self.fileitemDoubleClicked)
-        filelistLayout = QVBoxLayout()
-        filelistLayout.setContentsMargins(0, 0, 0, 0)
-        filelistLayout.addWidget(self.fileListWidget)
-        fileListContainer = QWidget()
-        fileListContainer.setLayout(filelistLayout)
-        self.filedock = QDockWidget(getStr('fileList'), self)
-        self.filedock.setObjectName(getStr('files'))
-        self.filedock.setWidget(fileListContainer)
-
         self.zoomWidget = ZoomWidget()
         self.colorDialog = ColorDialog(parent=self)
 
@@ -200,9 +189,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.setCentralWidget(scroll)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dock)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.filedock)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.explorer)
-        self.filedock.setFeatures(QDockWidget.DockWidgetFloatable)
 
         self.dockFeatures = QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetFloatable
         self.dock.setFeatures(self.dock.features() ^ self.dockFeatures)
