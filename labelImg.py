@@ -197,8 +197,6 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Create explorer
         self.explorer = ExplorerDoc(parent=self)
-        self.explorer.setRootPath('/media/mohammad/ExternalStorage/Git repositories/keras-retinanet/Dataset')
-
 
         self.setCentralWidget(scroll)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dock)
@@ -1276,6 +1274,7 @@ class MainWindow(QMainWindow, WindowMixin):
         else:
             targetDirPath = ustr(defaultOpenDirPath)
         self.lastOpenDir = targetDirPath
+        self.explorer.setRootPath(self.lastOpenDir)
         self.importDirImages(targetDirPath)
 
     def importDirImages(self, dirpath):

@@ -31,6 +31,7 @@ class ExplorerDoc(QDockWidget):
 
     def setRootPath(self, path):
         self.treeView.setRootPath(path)
+        self.listView.setRootPath(path)
         self._organizeLayout()
 
     def onTreeViewDoubleClicked(self, filename, filepath):
