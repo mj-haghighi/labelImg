@@ -1036,13 +1036,12 @@ class MainWindow(QMainWindow, WindowMixin):
         unicodeFilePath = os.path.abspath(unicodeFilePath)
         # Tzutalin 20160906 : Add file list and dock to move faster
         # Highlight the file item
-        if unicodeFilePath and self.fileListWidget.count() > 0:
+        if unicodeFilePath and len(self.mImgList) > 0:
             if unicodeFilePath in self.mImgList:
                 index = self.mImgList.index(unicodeFilePath)
-                fileWidgetItem = self.fileListWidget.item(index)
-                fileWidgetItem.setSelected(True)
+                modelIndex = self.explorer.listView.model().index(0, 0)
+                # self.explorer.listView.setCurrentIndex(modelIndex)
             else:
-                self.fileListWidget.clear()
                 self.mImgList.clear()
 
         if unicodeFilePath and os.path.exists(unicodeFilePath):
@@ -1271,12 +1270,12 @@ class MainWindow(QMainWindow, WindowMixin):
         self.lastOpenDir = dirpath
         self.dirname = dirpath
         self.filePath = None
-        self.fileListWidget.clear()
+        # self.explorer.listView.model().clear()
         self.mImgList = self.scanAllImages(dirpath)
         self.openNextImg()
-        for imgPath in self.mImgList:
-            item = QListWidgetItem(imgPath)
-            self.fileListWidget.addItem(item)
+        # for imgPath in self.mImgList:
+        #     item = QListWidgetItem(imgPath)
+        #     self.fileListWidget.addItem(item)
 
     def verifyImg(self, _value=False):
         # Proceding next image without dialog if having any label
