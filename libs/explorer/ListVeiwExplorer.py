@@ -24,8 +24,7 @@ class ListView(QListView):
 
     def _configStyle(self):
         self.setFlow(QListView.LeftToRight)
-        self.setWrapping(True)
-        
+        self.setWrapping(True)        
 
     def _translateIndex(self, index):
         indexItem = self.model().index(index.row(), 0, index.parent())

@@ -9,11 +9,12 @@ class ExplorerDoc(QDockWidget):
     def __init__(
         self,
         parent  = None,
-        name    = '&Explorer'
+        name    = '&Explorer',
+        onListViewItemClicked = lambda argv: None
     ):
         super().__init__()
         self.treeView = TreeView(parent=self, onDoubleClicked=self.onTreeViewDoubleClicked)#, onExpand=)
-        self.listView = ListView(parent=self)#, onClick=)
+        self.listView = ListView(parent=self, onClicked=onListViewItemClicked)#, onClick=)
         self.setParent(parent)
         self.setWindowTitle(name)
         self._organizeLayout()

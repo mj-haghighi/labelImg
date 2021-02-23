@@ -185,8 +185,11 @@ class MainWindow(QMainWindow, WindowMixin):
         self.canvas.drawingPolygon.connect(self.toggleDrawingSensitive)
 
         # Create explorer
-        self.explorer = ExplorerDoc(parent=self)
-
+        self.explorer = ExplorerDoc(
+            parent=self,
+            onListViewItemClicked=lambda filename, filepath: self.loadFile(filepath)
+        )
+        
         self.setCentralWidget(scroll)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dock)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.explorer)
@@ -710,6 +713,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.updateComboBox()
 
     # Tzutalin 20160906 : Add file list and dock to move faster
+    # no need
     def fileitemDoubleClicked(self, item=None):
         currIndex = self.mImgList.index(ustr(item.text()))
         if currIndex < len(self.mImgList):
