@@ -41,9 +41,13 @@ class ImagePreviewModel(AbstractExplorerModelMixin):
     def scanDirectory(self, path='', onScanDirectoryEnd: Callable = lambda *argv: None):
         """ scan directory for files and folders
         """
+        if os.path.isfile(path):
+            return
+
         extensions = ['.%s' % fmt.data().decode("ascii").lower()
                       for fmt in QImageReader.supportedImageFormats()]
         imagesPaths = []
+
 
         for f in os.listdir(path):
             filePath = os.path.join(path, f)
