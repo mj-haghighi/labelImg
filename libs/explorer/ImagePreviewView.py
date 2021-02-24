@@ -62,7 +62,7 @@ class ImagePreviewView(QListWidget, AbstractExplorerViewMixin):
         self.itemWidgetComponent = itemWidgetComponent
         self.itemClicked.connect(lambda item:
                                  onClicked(*self._translateIndex(item)))
-        self.itemDoubleClicked.connect(lambda index:
+        self.itemDoubleClicked.connect(lambda item:
                                        onDoubleClicked(*self._translateIndex(item)))
         self._configStyle()
         self._model = model
