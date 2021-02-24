@@ -4,12 +4,23 @@ import os
 import re
 from typing import List, Callable
 from ..utils import natural_sort
+from .FileDataCollector import PngJpegDataCollector, DICOMDataCollector
 
 
 class ImageDataItem:
     def __init__(self, path, name):
         self.path = path
         self.name = name
+        self.extra = {}
+
+        self._dataCollectors = [PngJpegDataCollector(), DICOMDataCollector()]
+        self._collectExtraData()
+
+    def _collectExtraData(self):
+        for dc in self._dataCollectors:
+            if dc.isMyType(self.name):
+                self.extra = dc.collect(self.path, self.name)
+                break
 
 
 class ImagePreviewModel(AbstractExplorerModelMixin):
@@ -45,13 +56,14 @@ class ImagePreviewModel(AbstractExplorerModelMixin):
             return
 
         extensions = ['.%s' % fmt.data().decode("ascii").lower()
-                      for fmt in QImageReader.supportedImageFormats()]
-        imagesPaths = []
+                      for fmt in QImageReader.supportedImageFormats()] + ['.dcm']
+        prefixes = ['I']
 
+        imagesPaths = []
 
         for f in os.listdir(path):
             filePath = os.path.join(path, f)
-            if os.path.isfile(filePath) and filePath.lower().endswith(tuple(extensions)):
+            if os.path.isfile(filePath) and (filePath.lower().endswith(tuple(extensions)) or f.startswith(tuple(prefixes))):
                 imagesPaths.append(filePath)
         natural_sort(imagesPaths, key=lambda x: x.lower())
 
