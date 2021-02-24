@@ -3,8 +3,6 @@ from PyQt5.QtWidgets import QListView
 from PyQt5.QtCore import QModelIndex
 
 
-
-
 class ListView(QListView):
     def __init__(
         self,

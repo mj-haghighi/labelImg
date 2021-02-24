@@ -6,6 +6,8 @@ from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 from typing import List
 import re
+from .Mixins import AbstractExplorerViewMixin
+from .ImagePreviewModel import ImagePreviewModel, ImageDataItem
 
 
 class ImagePreview(QWidget):
@@ -22,6 +24,7 @@ class ImagePreview(QWidget):
     @property
     def fileName(self):
         return self.imageName
+
     @property
     def filePath(self):
         return self.imagePath
@@ -45,55 +48,53 @@ class ImagePreview(QWidget):
         self.setLayout(layout)
 
 
-class ImagesModel:
-    def __init__(
-        self,
-        paths: List[str]
-    ):
-        self.paths = paths
-
-
-class WidgetListView(QListWidget):
+class ImagePreviewView(QListWidget, AbstractExplorerViewMixin):
     def __init__(
         self,
         parent=None,
-        itemWidget=ImagePreview,
+        itemWidgetComponent=ImagePreview,
         onClicked=lambda *argv: None,
         onDoubleClicked=lambda *argv: None,
+        model=ImagePreviewModel()
     ):
         super().__init__()
         self.parent = parent
-        self.itemWidget_ = itemWidget
+        self.itemWidgetComponent = itemWidgetComponent
         self.itemClicked.connect(lambda item:
-                                 onClicked(*self._translateItem(item)))
+                                 onClicked(*self._translateIndex(item)))
         self.itemDoubleClicked.connect(lambda index:
-                                       onDoubleClicked(*self._translateItem(item)))
+                                       onDoubleClicked(*self._translateIndex(item)))
         self._configStyle()
-        self._model = None
-
-    def setModel(self, model):
         self._model = model
-        self._organizeLayout()
-
-    def _organizeLayout(self):
-        for path in self.model().paths:
-            itemWidget_ = self.itemWidget_(imgPath=path)
-            item = QListWidgetItem()
-            item.setSizeHint(itemWidget_.sizeHint())
-
-            self.addItem(item)
-            self.setItemWidget(item, itemWidget_)
-
-    def model(self):
-        return self._model
 
     def _configStyle(self):
         self.setFlow(QListView.LeftToRight)
         self.setWrapping(True)
 
-    def _translateItem(self, item):
-        iw = self.itemWidget(item) 
+    def _translateIndex(self, index):
+        item = index
+        iw = self.itemWidget(item)
         return iw.fileName, iw.filePath
 
-    def setRootPath(self, path=''):
-        pass
+    def loadContent(self, dirPath):
+        """ Load View content
+        """
+        self.viewModel.scanDirectory(
+            path=dirPath,
+            onScanDirectoryEnd=lambda imageDataItems:
+                self._organizeLayout(imageDataItems))
+
+    @property
+    def viewModel(self):
+        return self._model
+
+    def _organizeLayout(self, imageDataItems: List[ImageDataItem]):
+        self.clear()
+        for imageDataItem in imageDataItems:
+
+            iw = self.itemWidgetComponent(imgPath=imageDataItem.path)
+            item = QListWidgetItem()
+            item.setSizeHint(iw.sizeHint())
+
+            self.addItem(item)
+            self.setItemWidget(item, iw)

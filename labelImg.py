@@ -93,7 +93,6 @@ class MainWindow(QMainWindow, WindowMixin):
         self.labelFileFormat = settings.get(SETTING_LABEL_FILE_FORMAT, LabelFileFormat.PASCAL_VOC)
 
         # For loading all image under a directory
-        self.mImgList = []
         self.dirname = None
         self.labelHist = []
         self.lastOpenDir = None
@@ -187,7 +186,7 @@ class MainWindow(QMainWindow, WindowMixin):
         # Create explorer
         self.explorer = ExplorerDoc(
             parent=self,
-            onListViewItemClicked=lambda filename, filepath: self.loadFile(filepath) if self.mayContinue() else None
+            onImageItemClick=lambda filename, filepath: self.loadFile(filepath) if self.mayContinue() else None
         )
         
         self.setCentralWidget(scroll)
@@ -712,15 +711,6 @@ class MainWindow(QMainWindow, WindowMixin):
             self.setDirty()
             self.updateComboBox()
 
-    # Tzutalin 20160906 : Add file list and dock to move faster
-    # no need
-    def fileitemDoubleClicked(self, item=None):
-        currIndex = self.mImgList.index(ustr(item.text()))
-        if currIndex < len(self.mImgList):
-            filename = self.mImgList[currIndex]
-            if filename:
-                self.loadFile(filename)
-
     # Add chris
     def btnstate(self, item= None):
         """ Function to handle difficult examples
@@ -1040,13 +1030,14 @@ class MainWindow(QMainWindow, WindowMixin):
         unicodeFilePath = os.path.abspath(unicodeFilePath)
         # Tzutalin 20160906 : Add file list and dock to move faster
         # Highlight the file item
-        if unicodeFilePath and len(self.mImgList) > 0:
-            if unicodeFilePath in self.mImgList:
-                index = self.mImgList.index(unicodeFilePath)
+        imgPathList = self.explorer.listView.viewModel.dataPaths
+        if unicodeFilePath and len(imgPathList) > 0:
+            if unicodeFilePath in imgPathList:
+                index = imgPathList.index(unicodeFilePath)
                 fileWidgetItem = self.explorer.listView.item(index)
                 fileWidgetItem.setSelected(True)
             else:
-                self.mImgList.clear()
+                pass
 
         if unicodeFilePath and os.path.exists(unicodeFilePath):
             if LabelFile.isLabelFile(unicodeFilePath):
@@ -1273,14 +1264,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.lastOpenDir = dirpath
         self.dirname = dirpath
         self.filePath = None
-        # self.explorer.listView.model().clear()
-        self.mImgList = self.scanAllImages(dirpath)
-        self.explorer.SetListViewmodel(self.mImgList)
-        self.explorer.setRootPath(self.lastOpenDir)
+        self.explorer.loadContent(self.lastOpenDir)        
         self.openNextImg()
-        # for imgPath in self.mImgList:
-        #     item = QListWidgetItem(imgPath)
-        #     self.fileListWidget.addItem(item)
 
     def verifyImg(self, _value=False):
         # Proceding next image without dialog if having any label
@@ -1313,15 +1298,16 @@ class MainWindow(QMainWindow, WindowMixin):
         if not self.mayContinue():
             return
 
-        if len(self.mImgList) <= 0:
+        imgPathList = self.explorer.listView.viewModel.dataPaths
+        if len(imgPathList) <= 0:
             return
 
         if self.filePath is None:
             return
 
-        currIndex = self.mImgList.index(self.filePath)
+        currIndex = imgPathList.index(self.filePath)
         if currIndex - 1 >= 0:
-            filename = self.mImgList[currIndex - 1]
+            filename = imgPathList[currIndex - 1]
             if filename:
                 self.loadFile(filename)
 
@@ -1338,16 +1324,17 @@ class MainWindow(QMainWindow, WindowMixin):
         if not self.mayContinue():
             return
 
-        if len(self.mImgList) <= 0:
+        imgPathList = self.explorer.listView.viewModel.dataPaths
+        if len(imgPathList) <= 0:
             return
 
         filename = None
         if self.filePath is None:
-            filename = self.mImgList[0]
+            filename = imgPathList[0]
         else:
-            currIndex = self.mImgList.index(self.filePath)
-            if currIndex + 1 < len(self.mImgList):
-                filename = self.mImgList[currIndex + 1]
+            currIndex = imgPathList.index(self.filePath)
+            if currIndex + 1 < len(imgPathList):
+                filename = imgPathList[currIndex + 1]
 
         if filename:
             self.loadFile(filename)
@@ -1547,9 +1534,10 @@ class MainWindow(QMainWindow, WindowMixin):
         self.canvas.verified = crmlParseReader.verified
 
     def copyPreviousBoundingBoxes(self):
-        currIndex = self.mImgList.index(self.filePath)
+        imgPathList = self.explorer.listView.viewModel.dataPaths
+        currIndex = imgPathList.index(self.filePath)
         if currIndex - 1 >= 0:
-            prevFilePath = self.mImgList[currIndex - 1]
+            prevFilePath = imgPathList[currIndex - 1]
             self.showBoundingBoxFromAnnotationFile(prevFilePath)
             self.saveFile()
 
