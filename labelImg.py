@@ -1206,14 +1206,14 @@ class MainWindow(QMainWindow, WindowMixin):
         extensions = ['.%s' % fmt.data().decode("ascii").lower() for fmt in QImageReader.supportedImageFormats()]
         images = []
 
-        for root, dirs, files in os.walk(folderPath):
-            for file in files:
-                if file.lower().endswith(tuple(extensions)):
-                    relativePath = os.path.join(root, file)
-                    path = ustr(os.path.abspath(relativePath))
-                    images.append(path)
+        for f in os.listdir(folderPath):
+            filePath = os.path.join(folderPath, f)
+            if os.path.isfile(filePath) and filePath.lower().endswith(tuple(extensions)):
+                images.append(filePath)
+
         natural_sort(images, key=lambda x: x.lower())
         return images
+
 
     def changeSavedirDialog(self, _value=False):
         if self.defaultSaveDir is not None:
