@@ -1329,12 +1329,12 @@ class MainWindow(QMainWindow, WindowMixin):
             return
 
         filename = None
-        if self.filePath is None:
+        if self.filePath is None or not (self.filePath in imgPathList):
             filename = imgPathList[0]
         else:
             currIndex = imgPathList.index(self.filePath)
             if currIndex + 1 < len(imgPathList):
-                filename = imgPathList[currIndex + 1]
+                filename = imgPathList[currIndex + 1]        
 
         if filename:
             self.loadFile(filename)
