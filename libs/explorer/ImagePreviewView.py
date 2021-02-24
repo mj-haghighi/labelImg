@@ -10,34 +10,25 @@ from .Mixins import AbstractExplorerViewMixin
 from .ImagePreviewModel import ImagePreviewModel, ImageDataItem
 
 
-class ImagePreview(QWidget):
+class ImagePreviewItem(QWidget):
     def __init__(
         self,
-        imgPath,
+        imageDataItem: ImageDataItem
     ):
         super().__init__()
-        self.imagePath = imgPath
-        self.imageName = re.split(r'\\|/', self.imagePath)[-1]
 
+        self.data = imageDataItem
         self._organizeLayout()
 
-    @property
-    def fileName(self):
-        return self.imageName
-
-    @property
-    def filePath(self):
-        return self.imagePath
-
     def _organizeLayout(self):
-        pixmap = QPixmap(self.imagePath)
+        pixmap = QPixmap(self.data.path)
         pixmap = pixmap.scaledToHeight(200)
 
         preview = QLabel()
         preview.setPixmap(pixmap)
         preview.setFixedSize(pixmap.size())
 
-        name = QLabel(self.imageName)
+        name = QLabel(self.data.name)
         name.setAlignment(Qt.AlignCenter)
 
         layout = QVBoxLayout()
@@ -52,7 +43,7 @@ class ImagePreviewView(QListWidget, AbstractExplorerViewMixin):
     def __init__(
         self,
         parent=None,
-        itemWidgetComponent=ImagePreview,
+        itemWidgetComponent=ImagePreviewItem,
         onClicked=lambda *argv: None,
         onDoubleClicked=lambda *argv: None,
         model=ImagePreviewModel()
@@ -74,7 +65,7 @@ class ImagePreviewView(QListWidget, AbstractExplorerViewMixin):
     def _translateIndex(self, index):
         item = index
         iw = self.itemWidget(item)
-        return iw.fileName, iw.filePath
+        return iw.data.name, iw.data.path
 
     def loadContent(self, dirPath):
         """ Load View content
@@ -92,7 +83,7 @@ class ImagePreviewView(QListWidget, AbstractExplorerViewMixin):
         self.clear()
         for imageDataItem in imageDataItems:
 
-            iw = self.itemWidgetComponent(imgPath=imageDataItem.path)
+            iw = self.itemWidgetComponent(imageDataItem=imageDataItem)
             item = QListWidgetItem()
             item.setSizeHint(iw.sizeHint())
 
