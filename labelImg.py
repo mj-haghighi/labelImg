@@ -187,7 +187,7 @@ class MainWindow(QMainWindow, WindowMixin):
         # Create explorer
         self.explorer = ExplorerDoc(
             parent=self,
-            onListViewItemClicked=lambda filename, filepath: self.loadFile(filepath)
+            onListViewItemClicked=lambda filename, filepath: self.loadFile(filepath) if self.mayContinue() else None
         )
         
         self.setCentralWidget(scroll)
