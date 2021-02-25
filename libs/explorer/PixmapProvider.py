@@ -1,6 +1,6 @@
 import pydicom
 import numpy as np
-from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtGui import QImage, QPixmap, QImageReader
 from .ImagePreviewModel import ImageDataItem
 from .Mixins import PngJpegTypeCheckingMixin, DICOMTypeCheckingMixin, AbstractFileTypecheckingMixin
 from ..SingletonMeta import SingletonMeta
@@ -19,7 +19,15 @@ class PngJpegPixmapProvider(AbstractPixmapProvider, PngJpegTypeCheckingMixin):
         PngJpegTypeCheckingMixin.__init__(self)
 
     def pixmap(self, filePath):
-        pmap = QPixmap(filePath)
+        reader = QImageReader(filePath)
+        reader.setAutoTransform(True)
+        imageData = reader.read()
+        if isinstance(imageData, QImage):
+            qimg = imageData
+        else:
+            qimg = QImage.fromData(imageData)
+        pmap = QPixmap.fromImage(qimg)
+        
         return pmap
 
 
