@@ -31,15 +31,17 @@ class DICOMPixmapProvider(AbstractPixmapProvider, DICOMTypeCheckingMixin):
 
     def pixmap(self, filePath):
         dicom = pydicom.read_file(filePath)
-        np_pixel_array = dicom.pixel_array
-        img = np.zeros((*np_pixel_array.shape, 3), dtype=np.uint8)
-        np_pixel_array = (np_pixel_array / np_pixel_array.max()) * 255
-        img[:, :, 0] = np_pixel_array.astype(int)
-        img[:, :, 1] = np_pixel_array.astype(int)
-        img[:, :, 2] = np_pixel_array.astype(int)
+        pixarr = dicom.pixel_array
+        pixarr = (pixarr / pixarr.max()) * 255
+        
+        # Qt dosent suport gray scaled image, so we have to set gray image to 3 channels.
+        gimg = np.zeros((*pixarr.shape, 3), dtype=np.uint8)
+        gimg[:, :, 0] = pixarr
+        gimg[:, :, 1] = pixarr
+        gimg[:, :, 2] = pixarr
 
-        height, width, channel = img.shape
+        height, width, channel = gimg.shape
         bytesPerLine = 3 * width
-        qImg = QImage(img.data, width, height,
+        qImg = QImage(gimg.data, width, height,
                       bytesPerLine, QImage.Format_RGB888)
         return QPixmap.fromImage(qImg)
