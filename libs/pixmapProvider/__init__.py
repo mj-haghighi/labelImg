@@ -1,1 +1,1 @@
-from .PixmapProvider import PngJpegPixmapProvider, DICOMPixmapProvider
+# from .PixmapProvider import PngJpegPixmapProvider, DICOMPixmapProvider

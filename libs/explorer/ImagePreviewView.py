@@ -7,7 +7,6 @@ from PyQt5.QtCore import QModelIndex
 from PyQt5.QtWidgets import QFileSystemModel, QDockWidget, QListView, QListWidget, QListWidgetItem, QWidget, QLabel, QVBoxLayout, QLayout
 from .ImagePreviewModel import ImagePreviewModel, ImageDataItem
 from ..mixins import AbstractExplorerViewMixin
-from ..pixmapProvider import PngJpegPixmapProvider, DICOMPixmapProvider
 
 
 class ImagePreviewItem(QWidget):
@@ -18,17 +17,10 @@ class ImagePreviewItem(QWidget):
         super().__init__()
 
         self.data = imageDataItem
-        self._pixmapProviders = [
-            PngJpegPixmapProvider(), DICOMPixmapProvider()]
         self._organizeLayout()
 
-    def _providePixmap(self) -> QPixmap:
-        for pp in self._pixmapProviders:
-            if pp.isMyType(self.data.name):
-                return pp.pixmap(self.data.path)
-
     def _organizeLayout(self):
-        pixmap = self._providePixmap()
+        pixmap = QPixmap.fromImage(self.data.qImage)
         pixmap = pixmap.scaledToHeight(200)
         preview = QLabel()
         preview.setPixmap(pixmap)
