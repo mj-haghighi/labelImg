@@ -34,7 +34,7 @@ class DICOMPixmapProvider(AbstractPixmapProvider, DICOMTypeCheckingMixin):
         pixarr = dicom.pixel_array
         pixarr = (pixarr / pixarr.max()) * 255
         
-        # Qt dosent suport gray scaled image, so we have to set gray image to 3 channels.
+        # Qt doesn't support grayscale image, so we have to set gray image to 3 channels.
         gimg = np.zeros((*pixarr.shape, 3), dtype=np.uint8)
         gimg[:, :, 0] = pixarr
         gimg[:, :, 1] = pixarr
