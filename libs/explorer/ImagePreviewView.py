@@ -8,6 +8,7 @@ from typing import List
 import re
 from .Mixins import AbstractExplorerViewMixin
 from .ImagePreviewModel import ImagePreviewModel, ImageDataItem
+from .PixmapProvider import PngJpegPixmapProvider, DICOMPixmapProvider, AbstractPixmapProvider
 
 
 class ImagePreviewItem(QWidget):
@@ -18,12 +19,18 @@ class ImagePreviewItem(QWidget):
         super().__init__()
 
         self.data = imageDataItem
+        self._pixmapProviders = [
+            PngJpegPixmapProvider(), DICOMPixmapProvider()]
         self._organizeLayout()
 
-    def _organizeLayout(self):
-        pixmap = QPixmap(self.data.path)
-        pixmap = pixmap.scaledToHeight(200)
+    def _providePixmap(self) -> QPixmap:
+        for pp in self._pixmapProviders:
+            if pp.isMyType(self.data.name):
+                return pp.pixmap(self.data.path)
 
+    def _organizeLayout(self):
+        pixmap = self._providePixmap()
+        pixmap = pixmap.scaledToHeight(200)
         preview = QLabel()
         preview.setPixmap(pixmap)
         preview.setFixedSize(pixmap.size())
