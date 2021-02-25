@@ -501,7 +501,10 @@ class MainWindow(QMainWindow, WindowMixin):
         # Open Dir if deafult file
         if self.filePath and os.path.isdir(self.filePath):
             self.openDirDialog(dirpath=self.filePath, silent=True)
+        
 
+        # QPixmap providers
+        self.pixmapProviders = []
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Control:
             self.canvas.setDrawingShapeToSquare(False)

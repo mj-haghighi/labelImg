@@ -1,8 +1,6 @@
-import pydicom
-import numpy as np
+import pydicom, numpy as np
 from PyQt5.QtGui import QImage, QPixmap, QImageReader
-from .ImagePreviewModel import ImageDataItem
-from .Mixins import PngJpegTypeCheckingMixin, DICOMTypeCheckingMixin, AbstractFileTypecheckingMixin
+from ..mixins import PngJpegTypeCheckingMixin, DICOMTypeCheckingMixin
 from ..SingletonMeta import SingletonMeta
 
 

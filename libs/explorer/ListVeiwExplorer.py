@@ -1,6 +1,5 @@
-from PyQt5.QtWidgets import QFileSystemModel, QDockWidget
-from PyQt5.QtWidgets import QListView
 from PyQt5.QtCore import QModelIndex
+from PyQt5.QtWidgets import QListView, QFileSystemModel, QDockWidget
 
 
 class ListView(QListView):

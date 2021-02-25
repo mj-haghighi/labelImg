@@ -1,14 +1,13 @@
-from PyQt5.QtWidgets import QFileSystemModel, QDockWidget
-from PyQt5.QtWidgets import QListView, QListWidget, QListWidgetItem, QWidget, QLabel, QVBoxLayout, QLayout
-from PyQt5.QtCore import QModelIndex
-from PyQt5.QtGui import QPixmap
+import re
+from typing import List
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
-from typing import List
-import re
-from .Mixins import AbstractExplorerViewMixin
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import QModelIndex
+from PyQt5.QtWidgets import QFileSystemModel, QDockWidget, QListView, QListWidget, QListWidgetItem, QWidget, QLabel, QVBoxLayout, QLayout
 from .ImagePreviewModel import ImagePreviewModel, ImageDataItem
-from .PixmapProvider import PngJpegPixmapProvider, DICOMPixmapProvider, AbstractPixmapProvider
+from ..mixins import AbstractExplorerViewMixin
+from ..pixmapProvider import PngJpegPixmapProvider, DICOMPixmapProvider
 
 
 class ImagePreviewItem(QWidget):

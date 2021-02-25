@@ -2,7 +2,6 @@ from PyQt5.QtWidgets import QDockWidget, QHBoxLayout, QListWidget, QWidget, QSpl
 from PyQt5.QtCore import Qt
 from .TreeVeiwExplorer import TreeView
 from .ListVeiwExplorer import ListView
-from .DirectoryUtils import getExt
 from .ImagePreviewView import ImagePreviewView 
 
 class ExplorerDoc(QDockWidget):
@@ -37,6 +36,6 @@ class ExplorerDoc(QDockWidget):
 
 
     def onTreeViewDoubleClicked(self, filename, filepath):
-        if getExt(filename).lower() in self.allowedExt:
+        if filename.split('.')[-1].lower() in self.allowedExt:
             return
         self.listView.loadContent(dirPath=filepath)

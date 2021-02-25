@@ -1,10 +1,9 @@
-from .Mixins import AbstractExplorerModelMixin
-from PyQt5.QtGui import QImageReader
-import os
-import re
+import os, re
 from typing import List, Callable
+from PyQt5.QtGui import QImageReader
 from ..utils import natural_sort
-from .FileDataCollector import PngJpegDataCollector, DICOMDataCollector
+from ..mixins import AbstractExplorerModelMixin
+from ..fileDataCollector import PngJpegDataCollector, DICOMDataCollector
 
 
 class ImageDataItem:

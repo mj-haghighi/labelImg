@@ -1,5 +1,5 @@
 from ..SingletonMeta import SingletonMeta
-from .Mixins import PngJpegTypeCheckingMixin, DICOMTypeCheckingMixin
+from ..mixins import PngJpegTypeCheckingMixin, DICOMTypeCheckingMixin
 
 
 class AbstractFileDataCollector(metaclass=SingletonMeta):
