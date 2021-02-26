@@ -16,8 +16,12 @@ class ImagePreviewItem(QWidget):
     ):
         super().__init__()
 
-        self.data = imageDataItem
+        self._data = imageDataItem
         self._organizeLayout()
+
+    @property
+    def data(self)-> ImageDataItem:
+        return self._data
 
     def _organizeLayout(self):
         pixmap = QPixmap.fromImage(self.data.qImage)
@@ -50,9 +54,9 @@ class ImagePreviewView(QListWidget, AbstractExplorerViewMixin):
         self.parent = parent
         self.itemWidgetComponent = itemWidgetComponent
         self.itemClicked.connect(lambda item:
-                                 onClicked(*self._translateIndex(item)))
+                                 onClicked(self._translateIndex(item)))
         self.itemDoubleClicked.connect(lambda item:
-                                       onDoubleClicked(*self._translateIndex(item)))
+                                       onDoubleClicked(self._translateIndex(item)))
         self._configStyle()
         self._model = model
 
@@ -63,7 +67,7 @@ class ImagePreviewView(QListWidget, AbstractExplorerViewMixin):
     def _translateIndex(self, index):
         item = index
         iw = self.itemWidget(item)
-        return iw.data.name, iw.data.path
+        return iw.data
 
     def loadContent(self, dirPath):
         """ Load View content
@@ -74,7 +78,7 @@ class ImagePreviewView(QListWidget, AbstractExplorerViewMixin):
                 self._organizeLayout(imageDataItems))
 
     @property
-    def viewModel(self):
+    def viewModel(self) -> ImagePreviewModel:
         return self._model
 
     def _organizeLayout(self, imageDataItems: List[ImageDataItem]):
