@@ -22,6 +22,10 @@ class ExplorerDoc(QDockWidget):
     @property
     def allowedExt(self):
         return ['jpeg', 'png']
+    
+    @property
+    def imageDataItems(self):
+        return self.listView.viewModel.dataItemsList
 
     def _organizeLayout(self):
         splitter = QSplitter(Qt.Horizontal)
