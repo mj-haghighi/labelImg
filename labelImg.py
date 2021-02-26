@@ -49,7 +49,7 @@ from libs.create_ml_io import JSON_EXT
 from libs.ustr import ustr
 from libs.hashableQListWidgetItem import HashableQListWidgetItem
 from libs.explorer import ExplorerDoc 
-
+from libs.explorer.ImagePreviewModel import ImageDataItem
 __appname__ = 'labelImg'
 
 
@@ -186,9 +186,9 @@ class MainWindow(QMainWindow, WindowMixin):
         # Create explorer
         self.explorer = ExplorerDoc(
             parent=self,
-            onImageItemClick=lambda filename, filepath: self.loadFile(filepath) if self.mayContinue() else None
+            onImageItemClick=lambda imageDataItem: self.loadImageOnCanvas(imageDataItem) if self.mayContinue() else None
         )
-        
+
         self.setCentralWidget(scroll)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dock)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.explorer)
@@ -204,8 +204,8 @@ class MainWindow(QMainWindow, WindowMixin):
         quit = action(getStr('quit'), self.close,
                       'Ctrl+Q', 'quit', getStr('quitApp'))
 
-        open = action(getStr('openFile'), self.openFile,
-                      'Ctrl+O', 'open', getStr('openFileDetail'))
+        # open = action(getStr('openFile'), self.openFile,
+        #               'Ctrl+O', 'open', getStr('openFileDetail'))
 
         opendir = action(getStr('openDir'), self.openDirDialog,
                          'Ctrl+u', 'open', getStr('openDir'))
@@ -392,8 +392,19 @@ class MainWindow(QMainWindow, WindowMixin):
         self.displayLabelOption.setChecked(settings.get(SETTING_PAINT_LABEL, False))
         self.displayLabelOption.triggered.connect(self.togglePaintLabelsOption)
 
-        addActions(self.menus.file,
-                   (open, opendir, copyPrevBounding, changeSavedir, openAnnotation, self.menus.recentFiles, save, save_format, saveAs, close, resetAll, deleteImg, quit))
+        addActions(self.menus.file, (
+            opendir,
+            copyPrevBounding,
+            changeSavedir,
+            openAnnotation,
+            self.menus.recentFiles,
+            save,
+            save_format,
+            saveAs,
+            close,
+            resetAll,
+            deleteImg,
+            quit))
         addActions(self.menus.help, (help, showInfo))
         addActions(self.menus.view, (
             self.autoSaving,
@@ -404,7 +415,7 @@ class MainWindow(QMainWindow, WindowMixin):
             zoomIn, zoomOut, zoomOrg, None,
             fitWindow, fitWidth))
 
-        self.menus.file.aboutToShow.connect(self.updateFileMenu)
+        # self.menus.file.aboutToShow.connect(self.updateFileMenu)
 
         # Custom context menu for the canvas widget:
         addActions(self.canvas.menus[0], self.actions.beginnerContext)
@@ -414,11 +425,11 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.tools = self.toolbar('Tools')
         self.actions.beginner = (
-            open, opendir, changeSavedir, openNextImg, openPrevImg, verify, save, save_format, None, create, copy, delete, None,
+            opendir, changeSavedir, openNextImg, openPrevImg, verify, save, save_format, None, create, copy, delete, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
 
         self.actions.advanced = (
-            open, opendir, changeSavedir, openNextImg, openPrevImg, save, save_format, None,
+            opendir, changeSavedir, openNextImg, openPrevImg, save, save_format, None,
             createMode, editMode, None,
             hideAll, showAll)
 
@@ -426,7 +437,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.statusBar().show()
 
         # Application state.
-        self.image = QImage()
+        self.currentImageDataItem = None
         self.filePath = ustr(defaultFilename)
         self.lastOpenDir= None
         self.recentFiles = []
@@ -481,13 +492,10 @@ class MainWindow(QMainWindow, WindowMixin):
             self.toggleAdvancedMode()
 
         # Populate the File menu dynamically.
-        self.updateFileMenu()
 
         # Since loading the file may take some time, make sure it runs in the background.
         if self.filePath and os.path.isdir(self.filePath):
             self.queueEvent(partial(self.importDirImages, self.filePath or ""))
-        elif self.filePath:
-            self.queueEvent(partial(self.loadFile, self.filePath or ""))
 
         # Callbacks:
         self.zoomWidget.valueChanged.connect(self.paintCanvas)
@@ -608,7 +616,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.itemsToShapes.clear()
         self.shapesToItems.clear()
         self.labelList.clear()
-        self.filePath = None
+        self.currentImageDataItem = None
         self.imageData = None
         self.labelFile = None
         self.canvas.resetState()
@@ -681,22 +689,6 @@ class MainWindow(QMainWindow, WindowMixin):
         assert self.advanced()
         self.toggleDrawMode(True)
         self.labelSelectionChanged()
-
-    def updateFileMenu(self):
-        currFilePath = self.filePath
-
-        def exists(filename):
-            return os.path.exists(filename)
-        menu = self.menus.recentFiles
-        menu.clear()
-        files = [f for f in self.recentFiles if f !=
-                 currFilePath and exists(f)]
-        for i, f in enumerate(files):
-            icon = newIcon('labels')
-            action = QAction(
-                icon, '&%d %s' % (i + 1, QFileInfo(f).fileName()), self)
-            action.triggered.connect(partial(self.loadRecent, f))
-            menu.addAction(action)
 
     def popLabelListMenu(self, point):
         self.menus.labelList.exec_(self.labelList.mapToGlobal(point))
@@ -1018,85 +1010,50 @@ class MainWindow(QMainWindow, WindowMixin):
         for item, shape in self.itemsToShapes.items():
             item.setCheckState(Qt.Checked if value else Qt.Unchecked)
 
-    def loadFile(self, filePath=None):
-        """Load the specified file, or the last opened file if None."""
-        self.resetState()
+    def setItemSelectedInExplorerPreview(self, imageDataItem):
+        print("self.explorer.imageDataItems: ", self.explorer.imageDataItems)
+        if imageDataItem not in self.explorer.imageDataItems:
+            return
+        index = self.explorer.imageDataItems.index(imageDataItem)
+        fileWidgetItem = self.explorer.listView.item(index)
+        fileWidgetItem.setSelected(True)
+
+    def loadImageOnCanvas(self, imageDataItem: ImageDataItem):
+        """ loadImageOnCanvas
+        """
+        self.currentImageDataItem = imageDataItem
         self.canvas.setEnabled(False)
-        if filePath is None:
-            filePath = self.settings.get(SETTING_FILENAME)
+        self.canvas.verified = False
+        self.setItemSelectedInExplorerPreview(imageDataItem)
+        self.canvas.loadPixmap(QPixmap.fromImage(imageDataItem.qImage))
+        self.setClean()
+        self.paintCanvas()
+        self.canvas.setEnabled(True)
+        self.adjustScale(initial=True)
+        self.status("Loaded %s" % imageDataItem.name)
+        self.toggleActions(True)
 
-        # Make sure that filePath is a regular python string, rather than QString
-        filePath = ustr(filePath)
-
-        # Fix bug: An  index error after select a directory when open a new file.
-        unicodeFilePath = ustr(filePath)
+    def loadAnotationsOnCanvas(self, lableFilePath):
+        unicodeFilePath = ustr(lableFilePath)
         unicodeFilePath = os.path.abspath(unicodeFilePath)
-        # Tzutalin 20160906 : Add file list and dock to move faster
-        # Highlight the file item
-        imgPathList = self.explorer.listView.viewModel.dataPaths
-        if unicodeFilePath and len(imgPathList) > 0:
-            if unicodeFilePath in imgPathList:
-                index = imgPathList.index(unicodeFilePath)
-                fileWidgetItem = self.explorer.listView.item(index)
-                fileWidgetItem.setSelected(True)
-            else:
-                pass
+        try:
+            self.labelFile = LabelFile(unicodeFilePath)
+        except LabelFileError as e:
+            self.errorMessage(u'Error opening file',
+                              (u"<p><b>%s</b></p>"
+                               u"<p>Make sure <i>%s</i> is a valid label file.")
+                              % (e, unicodeFilePath))
+            self.status("Error reading %s" % unicodeFilePath)
+            return False
 
-        if unicodeFilePath and os.path.exists(unicodeFilePath):
-            if LabelFile.isLabelFile(unicodeFilePath):
-                try:
-                    self.labelFile = LabelFile(unicodeFilePath)
-                except LabelFileError as e:
-                    self.errorMessage(u'Error opening file',
-                                      (u"<p><b>%s</b></p>"
-                                       u"<p>Make sure <i>%s</i> is a valid label file.")
-                                      % (e, unicodeFilePath))
-                    self.status("Error reading %s" % unicodeFilePath)
-                    return False
-                self.imageData = self.labelFile.imageData
-                self.lineColor = QColor(*self.labelFile.lineColor)
-                self.fillColor = QColor(*self.labelFile.fillColor)
-                self.canvas.verified = self.labelFile.verified
-            else:
-                # Load image:
-                # read data first and store for saving into label file.
-                self.imageData = read(unicodeFilePath, None)
-                self.labelFile = None
-                self.canvas.verified = False
+        self.canvas.setEnabled(False)
+        self.lineColor = QColor(*self.labelFile.lineColor)
+        self.fillColor = QColor(*self.labelFile.fillColor)
+        self.canvas.verified = self.labelFile.verified
 
-            if isinstance(self.imageData, QImage):
-                image = self.imageData
-            else:
-                image = QImage.fromData(self.imageData)
-            if image.isNull():
-                self.errorMessage(u'Error opening file',
-                                  u"<p>Make sure <i>%s</i> is a valid image file." % unicodeFilePath)
-                self.status("Error reading %s" % unicodeFilePath)
-                return False
-            self.status("Loaded %s" % os.path.basename(unicodeFilePath))
-            self.image = image
-            self.filePath = unicodeFilePath
-            self.canvas.loadPixmap(QPixmap.fromImage(image))
-            if self.labelFile:
-                self.loadLabels(self.labelFile.shapes)
-            self.setClean()
-            self.canvas.setEnabled(True)
-            self.adjustScale(initial=True)
-            self.paintCanvas()
-            self.addRecentFile(self.filePath)
-            self.toggleActions(True)
-            self.showBoundingBoxFromAnnotationFile(filePath)
-
-            self.setWindowTitle(__appname__ + ' ' + filePath)
-
-            # Default : select last item if there is at least one item
-            if self.labelList.count():
-                self.labelList.setCurrentItem(self.labelList.item(self.labelList.count()-1))
-                self.labelList.item(self.labelList.count()-1).setSelected(True)
-
-            self.canvas.setFocus(True)
-            return True
-        return False
+        self.showBoundingBoxFromAnnotationFile(lableFilePath)
+        self.canvas.setEnabled(True)
+        self.toggleActions(True)
 
     def showBoundingBoxFromAnnotationFile(self, filePath):
         if self.defaultSaveDir is not None:
@@ -1125,15 +1082,16 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.loadYOLOTXTByFilename(txtPath)
 
     def resizeEvent(self, event):
-        if self.canvas and not self.image.isNull()\
+        if self.canvas and not (self.currentImageDataItem is None) and not self.currentImageDataItem.qImage.isNull()\
            and self.zoomMode != self.MANUAL_ZOOM:
             self.adjustScale()
         super(MainWindow, self).resizeEvent(event)
 
     def paintCanvas(self):
-        assert not self.image.isNull(), "cannot paint null image"
+        assert not self.currentImageDataItem.qImage.isNull(), "cannot paint null image"
+        img = self.currentImageDataItem.qImage
         self.canvas.scale = 0.01 * self.zoomWidget.value()
-        self.canvas.labelFontSize = int(0.02 * max(self.image.width(), self.image.height()))
+        self.canvas.labelFontSize = int(0.02 * max(img.width(), img.height()))
         self.canvas.adjustSize()
         self.canvas.update()
 
@@ -1191,10 +1149,6 @@ class MainWindow(QMainWindow, WindowMixin):
         settings[SETTING_DRAW_SQUARE] = self.drawSquaresOption.isChecked()
         settings[SETTING_LABEL_FILE_FORMAT] = self.labelFileFormat
         settings.save()
-
-    def loadRecent(self, filename):
-        if self.mayContinue():
-            self.loadFile(filename)
 
 
     def changeSavedirDialog(self, _value=False):
@@ -1254,7 +1208,6 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.lastOpenDir = dirpath
         self.dirname = dirpath
-        self.filePath = None
         self.explorer.loadContent(self.lastOpenDir)        
         self.openNextImg()
 
@@ -1288,19 +1241,19 @@ class MainWindow(QMainWindow, WindowMixin):
 
         if not self.mayContinue():
             return
-
-        imgPathList = self.explorer.listView.viewModel.dataPaths
-        if len(imgPathList) <= 0:
+        if len(self.explorer.imageDataItems) <= 0:
             return
 
-        if self.filePath is None:
-            return
+        
+        if self.currentImageDataItem is None or not (self.currentImageDataItem in self.explorer.imageDataItems):
+            self.currentImageDataItem = self.explorer.imageDataItems[0]
+        else:
+            currIndex = self.explorer.imageDataItems.index(self.currentImageDataItem)
+            currIndex =  (currIndex - 1) % len(self.explorer.imageDataItems)
+            self.currentImageDataItem = self.explorer.imageDataItems[currIndex]        
 
-        currIndex = imgPathList.index(self.filePath)
-        if currIndex - 1 >= 0:
-            filename = imgPathList[currIndex - 1]
-            if filename:
-                self.loadFile(filename)
+        self.loadImageOnCanvas(self.currentImageDataItem)
+
 
     def openNextImg(self, _value=False):
         # Proceding prev image without dialog if having any label
@@ -1315,32 +1268,18 @@ class MainWindow(QMainWindow, WindowMixin):
         if not self.mayContinue():
             return
 
-        imgPathList = self.explorer.listView.viewModel.dataPaths
-        if len(imgPathList) <= 0:
+        if len(self.explorer.imageDataItems) <= 0:
             return
 
-        filename = None
-        if self.filePath is None or not (self.filePath in imgPathList):
-            filename = imgPathList[0]
+        
+        if self.currentImageDataItem is None or not (self.currentImageDataItem in self.explorer.imageDataItems):
+            self.currentImageDataItem = self.explorer.imageDataItems[0]
         else:
-            currIndex = imgPathList.index(self.filePath)
-            if currIndex + 1 < len(imgPathList):
-                filename = imgPathList[currIndex + 1]        
+            currIndex = self.explorer.imageDataItems.index(self.currentImageDataItem)
+            currIndex =  (currIndex + 1) % len(self.explorer.imageDataItems)
+            self.currentImageDataItem = self.explorer.imageDataItems[currIndex]        
 
-        if filename:
-            self.loadFile(filename)
-
-    def openFile(self, _value=False):
-        if not self.mayContinue():
-            return
-        path = os.path.dirname(ustr(self.filePath)) if self.filePath else '.'
-        formats = ['*.%s' % fmt.data().decode("ascii").lower() for fmt in QImageReader.supportedImageFormats()]
-        filters = "Image & Label files (%s)" % ' '.join(formats + ['*%s' % LabelFile.suffix])
-        filename = QFileDialog.getOpenFileName(self, '%s - Choose Image or Label file' % __appname__, path, filters)
-        if filename:
-            if isinstance(filename, (tuple, list)):
-                filename = filename[0]
-            self.loadFile(filename)
+        self.loadImageOnCanvas(self.currentImageDataItem)
 
     def saveFile(self, _value=False):
         if self.defaultSaveDir is not None and len(ustr(self.defaultSaveDir)):
@@ -1507,7 +1446,6 @@ class MainWindow(QMainWindow, WindowMixin):
         self.set_format(FORMAT_YOLO)
         tYoloParseReader = YoloReader(txtPath, self.image)
         shapes = tYoloParseReader.getShapes()
-        print (shapes)
         self.loadLabels(shapes)
         self.canvas.verified = tYoloParseReader.verified
 
