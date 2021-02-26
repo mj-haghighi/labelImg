@@ -1,9 +1,9 @@
 
-from PyQt5.QtWidgets import QTreeView
-from PyQt5.QtCore import QModelIndex
 from functools import partial
-from .Mixins import AbstractExplorerViewMixin
+from PyQt5.QtCore import QModelIndex
+from PyQt5.QtWidgets import QTreeView
 from .FileSystemModel import FileSystemModel
+from ..mixins import AbstractExplorerViewMixin
 
 
 class TreeView(QTreeView, AbstractExplorerViewMixin):
@@ -25,7 +25,6 @@ class TreeView(QTreeView, AbstractExplorerViewMixin):
                              onClicked(*self._translateIndex(index)))
         self.doubleClicked.connect(lambda index:
                                    onDoubleClicked(*self._translateIndex(index)))
-
 
     @property
     def viewModel(self):

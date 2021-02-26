@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QFileSystemModel
-from .Mixins import AbstractExplorerModelMixin
 from typing import Callable
+from PyQt5.QtWidgets import QFileSystemModel
+from ..mixins import AbstractExplorerModelMixin
 
 class FileSystemModel(QFileSystemModel, AbstractExplorerModelMixin):
     def __init__(self):
