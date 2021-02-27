@@ -5,31 +5,7 @@ from ..utils import natural_sort
 from ..mixins import AbstractExplorerModelMixin
 from ..fileDataCollector import PngJpegDataCollector, DICOMDataCollector
 from ..imageProviders import PngJpegQImageProvider, DICOMQImageProvider
-
-class ImageDataItem:
-    def __init__(self, path, name):
-        self.path = path
-        self.name = name
-        self.qImage = None
-        self.extra = {}
-
-        self._dataCollectors = [PngJpegDataCollector(), DICOMDataCollector()]
-        self._collectExtraData()
-
-        self._qImageProviders = [PngJpegQImageProvider(), DICOMQImageProvider()]
-        self._provideQImage()
-
-    def _collectExtraData(self):
-        for dc in self._dataCollectors:
-            if dc.isMyType(self.name):
-                self.extra = dc.collect(self.path, self.name)
-                break
-
-    def _provideQImage(self):
-        for qp in self._qImageProviders:
-            if qp.isMyType(self.name):
-                self.qImage = qp.QImage(self.path)
-                break;
+from ..imageDataItem import ImageDataItem
 
 class ImagePreviewModel(AbstractExplorerModelMixin):
     def __init__(self):
