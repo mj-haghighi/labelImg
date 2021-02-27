@@ -25,3 +25,25 @@ class DICOMTypeCheckingMixin(AbstractFileTypecheckingMixin):
         if name.endswith(tuple(self.validExt)) or name.startswith(tuple(self.validPrefix)):
             return True
         return False
+
+
+class XMLTypeCheckingMixin(AbstractFileTypecheckingMixin):
+    
+    def __init__(self):
+        self.validExt = ['xml']
+
+    def isMyType(self, name: str):
+        if name.endswith(tuple(self.validExt)):
+            return True
+        return False
+
+class JsonTypeCheckingMixin(AbstractFileTypecheckingMixin):
+    
+    def __init__(self):
+        self.validExt = ['json']
+
+    def isMyType(self, name: str):
+        if name.endswith(tuple(self.validExt)):
+            return True
+        return False
+
