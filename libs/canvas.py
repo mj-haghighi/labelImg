@@ -664,12 +664,12 @@ class Canvas(QWidget):
 
     def setLastLabel(self, text, line_color=None, fill_color=None):
         assert text
-        self.anotationsViews[-1].label = text
+        self.anotationsViews[-1].model.label = text
         if line_color:
-            self.anotationsViews[-1].line_color = line_color
+            self.anotationsViews[-1].shapeView.line_color = line_color
 
         if fill_color:
-            self.anotationsViews[-1].fill_color = fill_color
+            self.anotationsViews[-1].shapeView.fill_color = fill_color
 
         return self.anotationsViews[-1]
 

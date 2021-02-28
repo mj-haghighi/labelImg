@@ -33,7 +33,7 @@ class AnotationView:
                 font.setBold(True)
                 painter.setFont(font)
                 if(self.model.label == None):
-                    self.label = ""
+                    self.model.label = ""
                 if(min_y < min_y_label):
                     min_y += min_y_label
                 painter.drawText(min_x, min_y, self.model.label)

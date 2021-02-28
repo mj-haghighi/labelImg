@@ -750,10 +750,10 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def addLabel(self, shape):
         shape.paintLabel = self.displayLabelOption.isChecked()
-        item = HashableQListWidgetItem(shape.label)
+        item = HashableQListWidgetItem(shape.model.label)
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(Qt.Checked)
-        item.setBackground(generateColorByText(shape.label))
+        item.setBackground(generateColorByText(shape.model.label))
         self.itemsToShapes[item] = shape
         self.shapesToItems[shape] = item
         self.labelList.addItem(item)
