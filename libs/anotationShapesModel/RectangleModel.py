@@ -7,10 +7,10 @@ from typing import List
 class RectangleModel(AbstractAnotationShapeModel):
     def __init__(
         self,
-        points: List[QPoint] = []
+        points: List[QPoint]= None
     ):
-        super().__init__(points=points)
-        
+        super().__init__(points= [] if points is None else points)
+
     @property
     def maxAllowedPoints(self):
         return 4
