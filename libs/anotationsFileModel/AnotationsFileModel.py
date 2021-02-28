@@ -10,16 +10,16 @@ class AnotationsFileModel:
 
     def __init__(
         self,
-        anotations: List[AnotationModel] = [],
+        anotations: List[AnotationModel] = None,
         isVerified=False,
         imageFilePath=None
     ):
-        self._anotations = anotations
+        self._anotations = [] if anotations is None else anotations
         self._isVerified = isVerified
         self._imageFilePath = imageFilePath
 
-    def setVerfication(self, isVerfied):
-        self._isVerfied = isVerfied
+    def setVerfication(self, isVerified):
+        self._isVerified = isVerified
 
     @property
     def imageFilePath(self):
@@ -30,8 +30,8 @@ class AnotationsFileModel:
         return self._anotations
 
     @property
-    def isVerfied(self):
-        return self._isVerfied
+    def isVerified(self):
+        return self._isVerified
 
     @staticmethod
     def read(
@@ -42,7 +42,7 @@ class AnotationsFileModel:
             inputs: 
                 anotationsFilePath: path of anotation file
             return:
-                Tuple[isVerfied, imageFilePath, List[Anotation]]
+                Tuple[isVerified, imageFilePath, List[Anotation]]
         """
 
         dataDict = reader.read(anotationsFilePath)
@@ -62,8 +62,8 @@ class AnotationsFileModel:
         """ Write information in anotations file using writer
         """
         dataDict = {
-            'isVerified': self.isVerfied,
+            'isVerified': self.isVerified,
             'image': imageDataItem.toDict(),
             'anotations': [anot.toDict() for anot in self.anotations]
         }
-        writer.write(dataDict=dataDict, outputPath=outFilePath)
+        writer.write(dataDict=dataDict, outputPathWithoutExtention=outFilePath)
