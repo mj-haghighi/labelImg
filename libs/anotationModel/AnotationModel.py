@@ -5,8 +5,8 @@ class AnotationModel:
     """ Anotation class
     """
 
-    def __init__(self, shape: AbstractAnotationShapeModel, lable: str = None):
-        self.lable = lable
+    def __init__(self, shape: AbstractAnotationShapeModel, label: str = None):
+        self.label = label
         self.shape = shape
         self._shapeModels = [RectangleModel]
 
@@ -14,7 +14,7 @@ class AnotationModel:
         """ Convert Anotation information to python dictionary
         """
         return {
-            'lable': self.lable,
+            'label': self.label,
             'shape': self.shape.__class__.__name__,
             'coordinates': self.shape.toDict()
         }
@@ -32,6 +32,6 @@ class AnotationModel:
             raise Exception("!!! 'shape' not supported !!!")
 
         return AnotationModel(
-            lable=dict_['lable'],
+            label=dict_['label'],
             shape=shapeModel.fromDict(dict_['coordinates'])
         )

@@ -1,5 +1,4 @@
 from typing import List
-from ..SingletonMeta import SingletonMeta
 from ..anotationReadersWriters import JsonAnotationReader, JsonAnotationWriter, AbstractAnotationReader, AbstractAnotationWriter
 from ..anotationModel import AnotationModel
 from ..imageDataItem import ImageDataItem

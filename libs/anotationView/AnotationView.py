@@ -32,7 +32,7 @@ class AnotationView:
                 font.setPointSize(self.labelFontSize)
                 font.setBold(True)
                 painter.setFont(font)
-                if(self.model.lable == None):
+                if(self.model.label == None):
                     self.label = ""
                 if(min_y < min_y_label):
                     min_y += min_y_label
@@ -42,7 +42,7 @@ class AnotationView:
         """ make a copy of anotation view
         """
         anotation = AnotationView()
-        anotation.model.lable = self.model.lable
+        anotation.model.label = self.model.label
         anotation.shapeView.model.points = [
             p for p in self.shapeView.model.points]
         anotation.shapeView.fill = self.shapeView.fill
