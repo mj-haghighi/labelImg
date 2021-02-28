@@ -460,7 +460,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.zoom_level = 100
         self.fit_window = False
 
-        self._imagePathAnotationsFileModelMap = {}
+        self._imagePathToAnotationPath = {}
         self.anotationCollector = JsonAnotationCollector()
         self.anotationReader = JsonAnotationReader()
         self.anotationWriter = JsonAnotationWriter()
@@ -535,8 +535,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.pixmapProviders = []
 
     @property
-    def imagePathAnotationsFileModelMap(self) -> Dict[str, AnotationsFileModel]:
-        return self._imagePathAnotationsFileModelMap
+    def imagePathToAnotationPath(self) -> Dict[str, str]:
+        return self._imagePathToAnotationPath
 
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Control:
@@ -815,18 +815,18 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def saveLabels(self, annotationFilePath):
         cimgPath = self.currentImageDataItem.path
-        if cimgPath in self.imagePathAnotationsFileModelMap.keys():
-            anotationsFileModel = self.imagePathAnotationsFileModelMap[
+        if cimgPath in self.imagePathToAnotationPath.keys():
+            oldAnotFilePath = self.imagePathToAnotationPath[
                 self.currentImageDataItem.path]
+            anotationsFileModel = self.anotationReader.read(oldAnotFilePath)
         else:
+            self.imagePathToAnotationPath[cimgPath] = annotationFilePath
             anotationsFileModel = AnotationsFileModel(imageFilePath=cimgPath)
-            self.imagePathAnotationsFileModelMap[cimgPath] = anotationsFileModel
 
         annotationFilePath = ustr(annotationFilePath)
         anotationsFileModel.setVerfication(self.canvas.verified)
 
-        print('self.canvas.shapes: ', self.canvas.shapes)
-        anotationsFileModel.anotations = self.canvas.shapes
+        anotationsFileModel.anotations = self.shapesToItems.keys()
         anotationsFileModel.write(
             outFilePath=annotationFilePath,
             writer=self.anotationWriter,
@@ -1197,8 +1197,8 @@ class MainWindow(QMainWindow, WindowMixin):
         for path in anotationsFilesPath:
             afm = AnotationsFileModel.read(
                 anotationsFilePath=path, reader=self.anotationReader)
-            self.imagePathAnotationsFileModelMap[afm.imageFilePath] = afm
-        print('keys: ----: ', self.imagePathAnotationsFileModelMap.keys())
+            self.imagePathToAnotationPath[afm.imageFilePath] = path
+        print('keys: ----: ', self.imagePathToAnotationPath.keys())
 
     def verifyImg(self, _value=False):
         # Proceding next image without dialog if having any label
