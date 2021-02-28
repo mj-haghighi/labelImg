@@ -4,11 +4,11 @@ from ..anotationShapesModel import AbstractAnotationShapeModel, RectangleModel
 class AnotationModel:
     """ Anotation class
     """
+    availableShapeModels = [RectangleModel]
 
     def __init__(self, shape: AbstractAnotationShapeModel, label: str = None):
         self.label = label
         self.shape = shape
-        self._shapeModels = [RectangleModel]
 
     def toDict(self):
         """ Convert Anotation information to python dictionary
@@ -24,8 +24,8 @@ class AnotationModel:
         """ Convert python dictionary information to AnotationModel object
         """
         shapeModel = None
-        for sm in self._shapeModels:
-            if sm.__class__.__name__ == dict_['shape']:
+        for sm in AnotationModel.availableShapeModels:
+            if sm.__name__ == dict_['shape']:
                 shapeModel = sm
                 break
         if shapeModel is None:
