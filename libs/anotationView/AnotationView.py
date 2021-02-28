@@ -5,9 +5,9 @@ from ..anotationsShapesView import RectangleView, AbstractAnotationShapesView
 class AnotationView:
     labelFontSize = 8
 
-    def __init__(self, shapeView: AbstractAnotationShapesView = RectangleView(), paintLabel=False):
-        self.shapeView = shapeView
-        self.model = AnotationModel(shape=shapeView.model)
+    def __init__(self, shapeViewComponent: AbstractAnotationShapesView = RectangleView, paintLabel=False):
+        self.shapeView = shapeViewComponent()
+        self.model = AnotationModel(shape=self.shapeView.model)
         self.paintLabel = paintLabel
         
     @property
