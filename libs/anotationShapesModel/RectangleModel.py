@@ -19,10 +19,10 @@ class RectangleModel(AbstractAnotationShapeModel):
         """ Convert shape information to python dictionary
         """
         return {
-            'x1': self.points[0].x,
-            'y1': self.points[0].y,
-            'x2': self.points[1].x,
-            'y2': self.points[1].y
+            'x1': self.points[0].x(),
+            'y1': self.points[0].y(),
+            'x2': self.points[1].x(),
+            'y2': self.points[1].y()
         }
 
     @staticmethod
