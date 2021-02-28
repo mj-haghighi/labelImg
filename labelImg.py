@@ -81,7 +81,7 @@ class WindowMixin(object):
 class MainWindow(QMainWindow, WindowMixin):
     FIT_WINDOW, FIT_WIDTH, MANUAL_ZOOM = list(range(3))
 
-    def __init__(self, defaultFilename=None, defaultPrefdefClassFile=None, defaultSaveDir=None):
+    def __init__(self, defaultFilename=None, defaultPrefdefClassFile=None):
         super(MainWindow, self).__init__()
         self.setWindowTitle(__appname__)
 
@@ -94,8 +94,6 @@ class MainWindow(QMainWindow, WindowMixin):
         self.stringBundle = StringBundle.getBundle()
         def getStr(strId): return self.stringBundle.getString(strId)
 
-        # Save as Pascal voc xml
-        self.defaultSaveDir = defaultSaveDir
 
         # For loading all image under a directory
         self.dirname = None
@@ -215,11 +213,11 @@ class MainWindow(QMainWindow, WindowMixin):
         copyPrevBounding = action(getStr('copyPrevBounding'), self.copyPreviousBoundingBoxes,
                                   'Ctrl+v', 'paste', getStr('copyPrevBounding'))
 
-        changeSavedir = action(getStr('changeSaveDir'), self.changeSavedirDialog,
-                               'Ctrl+r', 'open', getStr('changeSavedAnnotationDir'))
+        # changeSavedir = action(getStr('changeSaveDir'), self.changeSavedirDialog,
+        #                        'Ctrl+r', 'open', getStr('changeSavedAnnotationDir'))
 
-        openAnnotation = action(getStr('openAnnotation'), self.openAnnotationDialog,
-                                'Ctrl+Shift+O', 'open', getStr('openAnnotationDetail'))
+        # openAnnotation = action(getStr('openAnnotation'), self.openAnnotationDialog,
+        #                         'Ctrl+Shift+O', 'open', getStr('openAnnotationDetail'))
 
         openNextImg = action(getStr('nextImg'), self.openNextImg,
                              'd', 'next', getStr('nextImgDetail'))
@@ -409,8 +407,6 @@ class MainWindow(QMainWindow, WindowMixin):
         addActions(self.menus.file, (
             opendir,
             copyPrevBounding,
-            changeSavedir,
-            openAnnotation,
             self.menus.recentFiles,
             save,
             saveAs,
@@ -438,11 +434,11 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.tools = self.toolbar('Tools')
         self.actions.beginner = (
-            opendir, changeSavedir, openNextImg, openPrevImg, verify, save, None, create, copy, delete, None,
+            opendir, openNextImg, openPrevImg, verify, save, None, create, copy, delete, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
 
         self.actions.advanced = (
-            opendir, changeSavedir, openNextImg, openPrevImg, save, None,
+            opendir, openNextImg, openPrevImg, save, None,
             createMode, editMode, None,
             hideAll, showAll)
 
@@ -464,6 +460,10 @@ class MainWindow(QMainWindow, WindowMixin):
         self.anotationCollector = JsonAnotationCollector()
         self.anotationReader = JsonAnotationReader()
         self.anotationWriter = JsonAnotationWriter()
+        self.defaultAnotationSavePath = None
+        self.defaultAnotationSaveFolder = None
+
+        
         # Add Chris
         self.difficult = False
 
@@ -488,11 +488,6 @@ class MainWindow(QMainWindow, WindowMixin):
         self.move(position)
         saveDir = ustr(settings.get(SETTING_SAVE_DIR, None))
         self.lastOpenDir = ustr(settings.get(SETTING_LAST_OPEN_DIR, None))
-        if self.defaultSaveDir is None and saveDir is not None and os.path.exists(saveDir):
-            self.defaultSaveDir = saveDir
-            self.statusBar().showMessage('%s started. Annotation will be saved to %s' %
-                                         (__appname__, self.defaultSaveDir))
-            self.statusBar().show()
 
         self.restoreState(settings.get(SETTING_WIN_STATE, QByteArray()))
         self.lineColor = QColor(settings.get(
@@ -815,18 +810,14 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def saveLabels(self, annotationFilePath):
         cimgPath = self.currentImageDataItem.path
-        if cimgPath in self.imagePathToAnotationPath.keys():
-            oldAnotFilePath = self.imagePathToAnotationPath[
-                self.currentImageDataItem.path]
-            anotationsFileModel = self.anotationReader.read(oldAnotFilePath)
-        else:
+        if not (cimgPath in self.imagePathToAnotationPath.keys()):
             self.imagePathToAnotationPath[cimgPath] = annotationFilePath
-            anotationsFileModel = AnotationsFileModel(imageFilePath=cimgPath)
 
-        annotationFilePath = ustr(annotationFilePath)
-        anotationsFileModel.setVerfication(self.canvas.verified)
+        anotationsFileModel = AnotationsFileModel(
+            anotations=[anotView.model for anotView in self.shapesToItems.keys()],
+            isVerified=self.canvas.verified,
+            imageFilePath=cimgPath)
 
-        anotationsFileModel.anotations = self.shapesToItems.keys()
         anotationsFileModel.write(
             outFilePath=annotationFilePath,
             writer=self.anotationWriter,
@@ -996,9 +987,20 @@ class MainWindow(QMainWindow, WindowMixin):
         index = self.explorer.imageDataItems.index(imageDataItem)
         fileWidgetItem = self.explorer.listView.item(index)
         fileWidgetItem.setSelected(True)
+    
+    def setDefaultAnotationSaveFolderAndPath(self):
+        imgPath = self.currentImageDataItem.path
+        if imgPath in self.imagePathToAnotationPath.keys():
+            self.defaultAnotationSavePath = self.imagePathToAnotationPath[imgPath]
+            self.defaultAnotationSaveFolder = os.path.dirname(self.defaultAnotationSavePath)
+        else:
+            self.defaultAnotationSavePath = None
+            self.defaultAnotationSaveFolder = os.path.dirname(imgPath)
+
 
     def loadImageAndAnotationOnCanvas(self, imageDataItem: ImageDataItem):
         self.loadImageOnCanvas(imageDataItem)
+        self.setDefaultAnotationSaveFolderAndPath()
         if imageDataItem.path in self.imagePathAnotationMap.keys():
             anots = self.imagePathAnotationMap[imageDataItem.path]
             self.loadAnotationsOnCanvas(anots)
@@ -1029,30 +1031,31 @@ class MainWindow(QMainWindow, WindowMixin):
         self.toggleActions(True)
 
     def showBoundingBoxFromAnnotationFile(self, filePath):
-        if self.defaultSaveDir is not None:
-            basename = os.path.basename(os.path.splitext(filePath)[0])
-            filedir = filePath.split(basename)[0].split(os.path.sep)[-2:-1][0]
-            xmlPath = os.path.join(self.defaultSaveDir, basename + XML_EXT)
-            txtPath = os.path.join(self.defaultSaveDir, basename + TXT_EXT)
-            jsonPath = os.path.join(self.defaultSaveDir, filedir + JSON_EXT)
+        # if self.defaultSaveDir is not None:
+        #     basename = os.path.basename(os.path.splitext(filePath)[0])
+        #     filedir = filePath.split(basename)[0].split(os.path.sep)[-2:-1][0]
+        #     xmlPath = os.path.join(self.defaultSaveDir, basename + XML_EXT)
+        #     txtPath = os.path.join(self.defaultSaveDir, basename + TXT_EXT)
+        #     jsonPath = os.path.join(self.defaultSaveDir, filedir + JSON_EXT)
 
-            """Annotation file priority:
-            PascalXML > YOLO
-            """
-            if os.path.isfile(xmlPath):
-                self.loadPascalXMLByFilename(xmlPath)
-            elif os.path.isfile(txtPath):
-                self.loadYOLOTXTByFilename(txtPath)
-            elif os.path.isfile(jsonPath):
-                self.loadCreateMLJSONByFilename(jsonPath, filePath)
+        #     """Annotation file priority:
+        #     PascalXML > YOLO
+        #     """
+        #     if os.path.isfile(xmlPath):
+        #         self.loadPascalXMLByFilename(xmlPath)
+        #     elif os.path.isfile(txtPath):
+        #         self.loadYOLOTXTByFilename(txtPath)
+        #     elif os.path.isfile(jsonPath):
+        #         self.loadCreateMLJSONByFilename(jsonPath, filePath)
 
-        else:
-            xmlPath = os.path.splitext(filePath)[0] + XML_EXT
-            txtPath = os.path.splitext(filePath)[0] + TXT_EXT
-            if os.path.isfile(xmlPath):
-                self.loadPascalXMLByFilename(xmlPath)
-            elif os.path.isfile(txtPath):
-                self.loadYOLOTXTByFilename(txtPath)
+        # else:
+        #     xmlPath = os.path.splitext(filePath)[0] + XML_EXT
+        #     txtPath = os.path.splitext(filePath)[0] + TXT_EXT
+        #     if os.path.isfile(xmlPath):
+        #         self.loadPascalXMLByFilename(xmlPath)
+        #     elif os.path.isfile(txtPath):
+        #         self.loadYOLOTXTByFilename(txtPath)
+        pass
 
     def resizeEvent(self, event):
         if self.canvas and not (self.currentImageDataItem is None) and not self.currentImageDataItem.qImage.isNull()\
@@ -1106,10 +1109,6 @@ class MainWindow(QMainWindow, WindowMixin):
         settings[SETTING_FILL_COLOR] = self.fillColor
         settings[SETTING_RECENT_FILES] = self.recentFiles
         settings[SETTING_ADVANCE_MODE] = not self._beginner
-        if self.defaultSaveDir and os.path.exists(self.defaultSaveDir):
-            settings[SETTING_SAVE_DIR] = ustr(self.defaultSaveDir)
-        else:
-            settings[SETTING_SAVE_DIR] = ''
 
         if self.lastOpenDir and os.path.exists(self.lastOpenDir):
             settings[SETTING_LAST_OPEN_DIR] = self.lastOpenDir
@@ -1122,23 +1121,6 @@ class MainWindow(QMainWindow, WindowMixin):
         settings[SETTING_DRAW_SQUARE] = self.drawSquaresOption.isChecked()
         settings[SETTING_LABEL_FILE_FORMAT] = self.labelFileFormat
         settings.save()
-
-    def changeSavedirDialog(self, _value=False):
-        if self.defaultSaveDir is not None:
-            path = ustr(self.defaultSaveDir)
-        else:
-            path = '.'
-
-        dirpath = ustr(QFileDialog.getExistingDirectory(self,
-                                                        '%s - Save annotations to the directory' % __appname__, path,  QFileDialog.ShowDirsOnly
-                                                        | QFileDialog.DontResolveSymlinks))
-
-        if dirpath is not None and len(dirpath) > 1:
-            self.defaultSaveDir = dirpath
-
-        self.statusBar().showMessage('%s . Annotation will be saved to %s' %
-                                     ('Change saved folder', self.defaultSaveDir))
-        self.statusBar().show()
 
     def openAnnotationDialog(self, _value=False):
         if self.filePath is None:
@@ -1198,7 +1180,6 @@ class MainWindow(QMainWindow, WindowMixin):
             afm = AnotationsFileModel.read(
                 anotationsFilePath=path, reader=self.anotationReader)
             self.imagePathToAnotationPath[afm.imageFilePath] = path
-        print('keys: ----: ', self.imagePathToAnotationPath.keys())
 
     def verifyImg(self, _value=False):
         # Proceding next image without dialog if having any label
@@ -1221,11 +1202,10 @@ class MainWindow(QMainWindow, WindowMixin):
     def openPrevImg(self, _value=False):
         # Proceding prev image without dialog if having any label
         if self.autoSaving.isChecked():
-            if self.defaultSaveDir is not None:
+            if self.defaultAnotationSaveFolder is not None:
                 if self.dirty is True:
                     self.saveFile()
             else:
-                self.changeSavedirDialog()
                 return
 
         if not self.mayContinue():
@@ -1246,11 +1226,10 @@ class MainWindow(QMainWindow, WindowMixin):
     def openNextImg(self, _value=False):
         # Proceding prev image without dialog if having any label
         if self.autoSaving.isChecked():
-            if self.defaultSaveDir is not None:
+            if self.defaultAnotationSaveFolder is not None:
                 if self.dirty is True:
                     self.saveFile()
             else:
-                self.changeSavedirDialog()
                 return
 
         if not self.mayContinue():
@@ -1270,13 +1249,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.loadImageOnCanvas(self.currentImageDataItem)
 
     def saveFile(self, _value=False):
-        if self.defaultSaveDir is not None and len(ustr(self.defaultSaveDir)):
-            if self.filePath:
-                imgFileName = os.path.basename(self.filePath)
-                savedFileName = os.path.splitext(imgFileName)[0]
-                savedPath = os.path.join(
-                    ustr(self.defaultSaveDir), savedFileName)
-                self._saveFile(savedPath)
+        if self.defaultAnotationSavePath is not None:
+            self._saveFile(self.defaultAnotationSavePath)
         else:
             self._saveFile(self.saveFileDialog(removeExt=False))
 
@@ -1287,12 +1261,13 @@ class MainWindow(QMainWindow, WindowMixin):
     def saveFileDialog(self, removeExt=True):
         caption = '%s - Choose File' % __appname__
         filters = 'File (*%s)' % self.anotationWriter.suffix
-        openDialogPath = self.currentPath()
-        dlg = QFileDialog(self, caption, openDialogPath, filters)
+        openDialogFolder = self.defaultAnotationSaveFolder
+        dlg = QFileDialog(self, caption, openDialogFolder, filters)
         dlg.setDefaultSuffix(self.anotationWriter.suffix)
         dlg.setAcceptMode(QFileDialog.AcceptSave)
         filenameWithoutExtension = os.path.splitext(
             self.currentImageDataItem.path)[0]
+
         dlg.selectFile(filenameWithoutExtension)
         dlg.setOption(QFileDialog.DontUseNativeDialog, False)
         if dlg.exec_():
@@ -1354,9 +1329,6 @@ class MainWindow(QMainWindow, WindowMixin):
     def errorMessage(self, title, message):
         return QMessageBox.critical(self, title,
                                     '<p><b>%s</b></p>%s' % (title, message))
-
-    def currentPath(self):
-        return os.path.dirname(self.filePath) if self.filePath else '.'
 
     def chooseColor1(self):
         color = self.colorDialog.getColor(self.lineColor, u'Choose line color',
@@ -1492,12 +1464,11 @@ def get_main_app(argv=[]):
                            default=os.path.join(os.path.dirname(
                                __file__), "data", "predefined_classes.txt"),
                            nargs="?")
-    argparser.add_argument("save_dir", nargs="?")
+    # argparser.add_argument("save_dir", nargs="?")
     args = argparser.parse_args(argv[1:])
     # Usage : labelImg.py image predefClassFile saveDir
     win = MainWindow(args.image_dir,
-                     args.predefined_classes_file,
-                     args.save_dir)
+                     args.predefined_classes_file)
     win.show()
     return app, win
 
