@@ -12,3 +12,6 @@ class RectangleView(AbstractAnotationShapesView):
     @property
     def model(self) -> AbstractAnotationShapeModel:
         return self._model
+
+    def setModel(self, m: RectangleModel):
+        self._model = m

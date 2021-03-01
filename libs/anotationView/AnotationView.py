@@ -7,12 +7,20 @@ class AnotationView:
 
     def __init__(self, shapeViewComponent: AbstractAnotationShapesView = RectangleView, paintLabel=False):
         self.shapeView = shapeViewComponent()
-        self.model = AnotationModel(shape=self.shapeView.model)
+        self._model = AnotationModel(shape=self.shapeView.model)
         self.paintLabel = paintLabel
         
     @property
     def selected(self):
         return self.shapeView.selected
+
+    @property
+    def model(self)->AnotationModel:
+        return self._model
+
+    def setModel(self, m: AnotationModel):
+        self._model = m
+        self.shapeView.setModel(m.shape)
 
     @selected.setter
     def selected(self, s):
@@ -24,7 +32,7 @@ class AnotationView:
             min_x = sys.maxsize
             min_y = sys.maxsize
             min_y_label = int(1.25 * self.labelFontSize)
-            for point in self.model.points:
+            for point in self.shapeView.model.points:
                 min_x = min(min_x, point.x())
                 min_y = min(min_y, point.y())
             if min_x != sys.maxsize and min_y != sys.maxsize:

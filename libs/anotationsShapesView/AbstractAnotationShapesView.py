@@ -33,6 +33,10 @@ class AbstractAnotationShapesView(ColorPropertyMixin, PointPropertyMixin):
     def model(self) -> AbstractAnotationShapeModel:
         raise("!!! this method is not implemented !!!")
 
+    def setModel(self, m: AbstractAnotationShapeModel):
+        raise("!!! this method is not implemented !!!")
+
+
     def close(self):
         self._closed = True
 
