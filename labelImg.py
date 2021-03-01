@@ -1239,7 +1239,8 @@ class MainWindow(QMainWindow, WindowMixin):
         return ''
 
     def _saveFile(self, annotationFilePath):
-        if annotationFilePath and self.saveLabels(annotationFilePath):
+        if annotationFilePath:
+            self.saveLabels(annotationFilePath)
             self.setClean()
             self.statusBar().showMessage('Saved to  %s' % annotationFilePath)
             self.statusBar().show()
