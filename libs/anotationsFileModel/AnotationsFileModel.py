@@ -55,7 +55,7 @@ class AnotationsFileModel:
 
     def write(
         self,
-        outFilePath,
+        outputPathWithoutExtention,
         imageDataItem: ImageDataItem,
         writer: AbstractAnotationWriter = JsonAnotationWriter(),
     ):
@@ -66,4 +66,4 @@ class AnotationsFileModel:
             'image': imageDataItem.toDict(),
             'anotations': [anot.toDict() for anot in self.anotations]
         }
-        writer.write(dataDict=dataDict, outputPathWithoutExtention=outFilePath)
+        writer.write(dataDict=dataDict, outputPathWithoutExtention=outputPathWithoutExtention)

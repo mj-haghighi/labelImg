@@ -789,7 +789,7 @@ class MainWindow(QMainWindow, WindowMixin):
             imageFilePath=cimgPath)
 
         anotationsFileModel.write(
-            outFilePath=annotationFilePath,
+            outputPathWithoutExtention=os.path.splitext(annotationFilePath)[0],
             writer=self.anotationWriter,
             imageDataItem=self.currentImageDataItem
         )
@@ -1000,7 +1000,6 @@ class MainWindow(QMainWindow, WindowMixin):
 
         views = []
         for am in anotFileModel.anotations:
-            print('am.shape.points: ', am.shape.points)
             av = AnotationView()
             av.setModel(am)
             views.append(av)
