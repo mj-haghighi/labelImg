@@ -975,6 +975,7 @@ class MainWindow(QMainWindow, WindowMixin):
             anotPath = self.imagePathToAnotationPath[imageDataItem.path]
             self.loadAnotationsOnCanvas(anotPath)
 
+
     def loadImageOnCanvas(self, imageDataItem: ImageDataItem):
         """ loadImageOnCanvas
         """
@@ -1004,9 +1005,16 @@ class MainWindow(QMainWindow, WindowMixin):
             av.setModel(am)
             views.append(av)
 
+        self.addAnotationViewItemsLableToShapeList(views)
         self.canvas.loadShapes(views)
         self.canvas.setEnabled(True)
         self.toggleActions(True)
+
+    def addAnotationViewItemsLableToShapeList(self, anotationViews: List[AnotationView]):
+        """ Add anotation view to shape list doc pannel
+        """
+        for view in anotationViews:
+            self.addLabel(view)
 
 
     def resizeEvent(self, event):
