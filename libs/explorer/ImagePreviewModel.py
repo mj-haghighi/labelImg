@@ -41,14 +41,16 @@ class ImagePreviewModel(AbstractExplorerModelMixin):
 
         extensions = ['.%s' % fmt.data().decode("ascii").lower()
                       for fmt in QImageReader.supportedImageFormats()] + ['.dcm']
+        anotationsExts = ['.json']
         prefixes = ['I']
 
         imagesPaths = []
 
         for f in os.listdir(path):
             filePath = os.path.join(path, f)
-            if os.path.isfile(filePath) and (filePath.lower().endswith(tuple(extensions)) or f.startswith(tuple(prefixes))):
+            if os.path.isfile(filePath) and (filePath.lower().endswith(tuple(extensions)) or (f.startswith(tuple(prefixes)) and not filePath.lower().endswith(tuple(anotationsExts)))):
                 imagesPaths.append(filePath)
+
         natural_sort(imagesPaths, key=lambda x: x.lower())
 
         dataItems = []
