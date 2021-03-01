@@ -17,6 +17,7 @@ class ExplorerDoc(QDockWidget):
         self.listView = ImagePreviewView(parent=self, onClicked=onImageItemClick)#, onClick=)
         self.setParent(parent)
         self.setWindowTitle(name)
+        self.setObjectName(ExplorerDoc.__name__)
         self._organizeLayout()
         
     @property
