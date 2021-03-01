@@ -1003,6 +1003,7 @@ class MainWindow(QMainWindow, WindowMixin):
         for am in anotFileModel.anotations:
             av = AnotationView()
             av.setModel(am)
+            av.shapeView.close()
             views.append(av)
 
         self.addAnotationViewItemsLableToShapeList(views)

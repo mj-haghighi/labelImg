@@ -6,10 +6,18 @@ class AnotationView:
     labelFontSize = 8
 
     def __init__(self, shapeViewComponent: AbstractAnotationShapesView = RectangleView, paintLabel=False):
-        self.shapeView = shapeViewComponent()
+        self._shapeView = shapeViewComponent()
         self._model = AnotationModel(shape=self.shapeView.model)
         self.paintLabel = paintLabel
-        
+
+    @property
+    def shapeView(self) -> AbstractAnotationShapesView:
+        return self._shapeView
+
+    @shapeView.setter
+    def shapeView(self, sv: AbstractAnotationShapesView):
+        self._shapeView = sv
+
     @property
     def selected(self):
         return self.shapeView.selected
