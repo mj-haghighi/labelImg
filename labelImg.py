@@ -969,6 +969,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.defaultAnotationSaveFolder = os.path.dirname(imgPath)
 
     def loadImageAndAnotationOnCanvas(self, imageDataItem: ImageDataItem):
+        self.resetState()
         self.loadImageOnCanvas(imageDataItem)
         self.setDefaultAnotationSaveFolderAndPath()
         if imageDataItem.path in self.imagePathToAnotationPath.keys():
