@@ -55,7 +55,7 @@ from libs.anotationCollector import JsonAnotationCollector
 from libs.anotationReadersWriters import JsonAnotationReader, JsonAnotationWriter
 from libs.anotationsFileModel import AnotationsFileModel
 from libs.anotationModel import AnotationModel
-
+from libs.anotationView import AnotationView
 __appname__ = 'labelImg'
 
 
@@ -188,7 +188,7 @@ class MainWindow(QMainWindow, WindowMixin):
         # Create explorer
         self.explorer = ExplorerDoc(
             parent=self,
-            onImageItemClick=lambda imageDataItem: self.loadImageOnCanvas(
+            onImageItemClick=lambda imageDataItem: self.loadImageAndAnotationOnCanvas(
                 imageDataItem) if self.mayContinue() else None
         )
 
@@ -766,36 +766,6 @@ class MainWindow(QMainWindow, WindowMixin):
         del self.itemsToShapes[item]
         self.updateComboBox()
 
-    def loadLabels(self, shapes):
-        s = []
-        for label, points, line_color, fill_color, difficult in shapes:
-            shape = Shape(label=label)
-            for x, y in points:
-
-                # Ensure the labels are within the bounds of the image. If not, fix them.
-                x, y, snapped = self.canvas.snapPointToCanvas(x, y)
-                if snapped:
-                    self.setDirty()
-
-                shape.addPoint(QPointF(x, y))
-            shape.difficult = difficult
-            shape.close()
-            s.append(shape)
-
-            if line_color:
-                shape.line_color = QColor(*line_color)
-            else:
-                shape.line_color = generateColorByText(label)
-
-            if fill_color:
-                shape.fill_color = QColor(*fill_color)
-            else:
-                shape.fill_color = generateColorByText(label)
-
-            self.addLabel(shape)
-        self.updateComboBox()
-        self.canvas.loadShapes(s)
-
     def updateComboBox(self):
         # Get the unique labels and add them to the Combobox.
         itemsTextList = [str(self.labelList.item(i).text())
@@ -987,23 +957,23 @@ class MainWindow(QMainWindow, WindowMixin):
         index = self.explorer.imageDataItems.index(imageDataItem)
         fileWidgetItem = self.explorer.listView.item(index)
         fileWidgetItem.setSelected(True)
-    
+
     def setDefaultAnotationSaveFolderAndPath(self):
         imgPath = self.currentImageDataItem.path
         if imgPath in self.imagePathToAnotationPath.keys():
             self.defaultAnotationSavePath = self.imagePathToAnotationPath[imgPath]
-            self.defaultAnotationSaveFolder = os.path.dirname(self.defaultAnotationSavePath)
+            self.defaultAnotationSaveFolder = os.path.dirname(
+                self.defaultAnotationSavePath)
         else:
             self.defaultAnotationSavePath = None
             self.defaultAnotationSaveFolder = os.path.dirname(imgPath)
 
-
     def loadImageAndAnotationOnCanvas(self, imageDataItem: ImageDataItem):
         self.loadImageOnCanvas(imageDataItem)
         self.setDefaultAnotationSaveFolderAndPath()
-        if imageDataItem.path in self.imagePathAnotationMap.keys():
-            anots = self.imagePathAnotationMap[imageDataItem.path]
-            self.loadAnotationsOnCanvas(anots)
+        if imageDataItem.path in self.imagePathToAnotationPath.keys():
+            anotPath = self.imagePathToAnotationPath[imageDataItem.path]
+            self.loadAnotationsOnCanvas(anotPath)
 
     def loadImageOnCanvas(self, imageDataItem: ImageDataItem):
         """ loadImageOnCanvas
@@ -1020,42 +990,24 @@ class MainWindow(QMainWindow, WindowMixin):
         self.status("Loaded %s" % imageDataItem.name)
         self.toggleActions(True)
 
-    def loadAnotationsOnCanvas(self, anotations: List[AnotationModel]):
-        unicodeFilePath = ustr(lableFilePath)
-        unicodeFilePath = os.path.abspath(unicodeFilePath)
+    def loadAnotationsOnCanvas(self, anotationFilePath):
+        anotFileModel = AnotationsFileModel.read(
+            reader=self.anotationReader,
+            anotationsFilePath=os.path.abspath(ustr(anotationFilePath)))
+        
+        self.canvas.verified = anotFileModel.isVerified
 
-        self.canvas.verified = self.labelFile.verified
+        views = []
+        for am in anotFileModel.anotations:
+            print('am.shape.points: ', am.shape.points)
+            av = AnotationView()
+            av.setModel(am)
+            views.append(av)
 
-        self.showBoundingBoxFromAnnotationFile(lableFilePath)
+        self.canvas.loadShapes(views)
         self.canvas.setEnabled(True)
         self.toggleActions(True)
 
-    def showBoundingBoxFromAnnotationFile(self, filePath):
-        # if self.defaultSaveDir is not None:
-        #     basename = os.path.basename(os.path.splitext(filePath)[0])
-        #     filedir = filePath.split(basename)[0].split(os.path.sep)[-2:-1][0]
-        #     xmlPath = os.path.join(self.defaultSaveDir, basename + XML_EXT)
-        #     txtPath = os.path.join(self.defaultSaveDir, basename + TXT_EXT)
-        #     jsonPath = os.path.join(self.defaultSaveDir, filedir + JSON_EXT)
-
-        #     """Annotation file priority:
-        #     PascalXML > YOLO
-        #     """
-        #     if os.path.isfile(xmlPath):
-        #         self.loadPascalXMLByFilename(xmlPath)
-        #     elif os.path.isfile(txtPath):
-        #         self.loadYOLOTXTByFilename(txtPath)
-        #     elif os.path.isfile(jsonPath):
-        #         self.loadCreateMLJSONByFilename(jsonPath, filePath)
-
-        # else:
-        #     xmlPath = os.path.splitext(filePath)[0] + XML_EXT
-        #     txtPath = os.path.splitext(filePath)[0] + TXT_EXT
-        #     if os.path.isfile(xmlPath):
-        #         self.loadPascalXMLByFilename(xmlPath)
-        #     elif os.path.isfile(txtPath):
-        #         self.loadYOLOTXTByFilename(txtPath)
-        pass
 
     def resizeEvent(self, event):
         if self.canvas and not (self.currentImageDataItem is None) and not self.currentImageDataItem.qImage.isNull()\
@@ -1119,7 +1071,6 @@ class MainWindow(QMainWindow, WindowMixin):
         settings[SETTING_SINGLE_CLASS] = self.singleClassMode.isChecked()
         settings[SETTING_PAINT_LABEL] = self.displayLabelOption.isChecked()
         settings[SETTING_DRAW_SQUARE] = self.drawSquaresOption.isChecked()
-        settings[SETTING_LABEL_FILE_FORMAT] = self.labelFileFormat
         settings.save()
 
     def openAnnotationDialog(self, _value=False):
@@ -1221,7 +1172,7 @@ class MainWindow(QMainWindow, WindowMixin):
             currIndex = (currIndex - 1) % len(self.explorer.imageDataItems)
             self.currentImageDataItem = self.explorer.imageDataItems[currIndex]
 
-        self.loadImageOnCanvas(self.currentImageDataItem)
+        self.loadImageAndAnotationOnCanvas(self.currentImageDataItem)
 
     def openNextImg(self, _value=False):
         # Proceding prev image without dialog if having any label
@@ -1246,7 +1197,7 @@ class MainWindow(QMainWindow, WindowMixin):
             currIndex = (currIndex + 1) % len(self.explorer.imageDataItems)
             self.currentImageDataItem = self.explorer.imageDataItems[currIndex]
 
-        self.loadImageOnCanvas(self.currentImageDataItem)
+        self.loadImageAndAnotationOnCanvas(self.currentImageDataItem)
 
     def saveFile(self, _value=False):
         if self.defaultAnotationSavePath is not None:
@@ -1382,44 +1333,7 @@ class MainWindow(QMainWindow, WindowMixin):
                     else:
                         self.labelHist.append(line)
 
-    def loadPascalXMLByFilename(self, xmlPath):
-        if self.filePath is None:
-            return
-        if os.path.isfile(xmlPath) is False:
-            return
-
-        self.set_format(FORMAT_PASCALVOC)
-
-        tVocParseReader = PascalVocReader(xmlPath)
-        shapes = tVocParseReader.getShapes()
-        self.loadLabels(shapes)
-        self.canvas.verified = tVocParseReader.verified
-
-    def loadYOLOTXTByFilename(self, txtPath):
-        if self.filePath is None:
-            return
-        if os.path.isfile(txtPath) is False:
-            return
-
-        self.set_format(FORMAT_YOLO)
-        tYoloParseReader = YoloReader(txtPath, self.image)
-        shapes = tYoloParseReader.getShapes()
-        self.loadLabels(shapes)
-        self.canvas.verified = tYoloParseReader.verified
-
-    def loadCreateMLJSONByFilename(self, jsonPath, filePath):
-        if self.filePath is None:
-            return
-        if os.path.isfile(jsonPath) is False:
-            return
-
-        self.set_format(FORMAT_CREATEML)
-
-        crmlParseReader = CreateMLReader(jsonPath, filePath)
-        shapes = crmlParseReader.get_shapes()
-        self.loadLabels(shapes)
-        self.canvas.verified = crmlParseReader.verified
-
+    
     def copyPreviousBoundingBoxes(self):
         imgPathList = self.explorer.listView.viewModel.dataPaths
         currIndex = imgPathList.index(self.filePath)
