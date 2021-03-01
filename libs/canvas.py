@@ -10,6 +10,7 @@ except ImportError:
 #from PyQt4.QtOpenGL import *
 
 # from libs.anotationView import Shape
+from typing import List
 from libs.utils import distance
 from libs.anotationView import AnotationView
 from libs.anotationModel import AnotationModel
@@ -697,8 +698,8 @@ class Canvas(QWidget):
         self.anotationsViews = []
         self.repaint()
 
-    def loadShapes(self, shapes):
-        self.anotationsViews = list(shapes)
+    def loadShapes(self, anotationsViews:List[AnotationView]):
+        self.anotationsViews = anotationsViews
         self.current = None
         self.repaint()
 
