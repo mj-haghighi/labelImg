@@ -1,6 +1,6 @@
+import pydicom
 from ..SingletonMeta import SingletonMeta
 from ..mixins import PngJpegTypeCheckingMixin, DICOMTypeCheckingMixin
-
 
 class AbstractFileDataCollector(metaclass=SingletonMeta):
     def collect(self, path, name):
@@ -14,6 +14,7 @@ class PngJpegDataCollector(AbstractFileDataCollector, PngJpegTypeCheckingMixin):
     def collect(self, path, name):
         extra = {}
         extra['ext'] = name.split('.')[-1]
+        extra['id'] = 0
         return extra
 
 
@@ -24,4 +25,6 @@ class DICOMDataCollector(AbstractFileDataCollector, DICOMTypeCheckingMixin):
     def collect(self, path, name):
         extra = {}
         extra['ext'] = 'dcm'
+        dc = pydicom.dcmread(path)
+        extra['id'] = dc.SeriesNumber
         return extra
