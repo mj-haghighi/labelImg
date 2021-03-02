@@ -52,7 +52,13 @@ class ExplorerDoc(QDockWidget):
     def loadContent(self, path):
         self.treeView.loadContent(dirPath=path)
         self.IdlistView.viewModel.scanDirectory(path, onScanDirectoryEnd=lambda imageDataItems: self.segmentImagesBaseOnIds(imageDataItems))
-        self.IdlistView.viewModel.dataItemsList = [self.IdToImageDataItem[ID][0] for ID in self.IdToImageDataItem.keys()] 
+        self.loadIdListViewContent()
+
+    def loadIdListViewContent(self):
+        IDModelItems = [self.IdToImageDataItem[ID][0].copy() for ID in self.IdToImageDataItem.keys()]
+        for item in IDModelItems:
+            item.displayText = 'ID {}'.format(item.extra['id'])
+        self.IdlistView.viewModel.dataItemsList = IDModelItems
         self.IdlistView._organizeLayout(self.IdlistView.viewModel.dataItemsList)
 
 
@@ -76,5 +82,4 @@ class ExplorerDoc(QDockWidget):
         self.IdlistView.clear()
         self.listView.clear()
         self.IdlistView.viewModel.scanDirectory(filepath, onScanDirectoryEnd=lambda imageDataItems: self.segmentImagesBaseOnIds(imageDataItems))
-        self.IdlistView.viewModel.dataItemsList = [self.IdToImageDataItem[ID][0] for ID in self.IdToImageDataItem.keys()] 
-        self.IdlistView._organizeLayout(self.IdlistView.viewModel.dataItemsList)
+        self.loadIdListViewContent()
