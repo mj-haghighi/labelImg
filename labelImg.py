@@ -1378,9 +1378,10 @@ def get_main_app(argv=[]):
     Standard boilerplate Qt application code.
     Do everything but app.exec_() -- so that we can test the application in one thread
     """
-    app = QApplication(argv)
-    app.setApplicationName(__appname__)
-    app.setWindowIcon(newIcon("app"))
+    from fbs_runtime.application_context.PyQt5 import ApplicationContext
+    app = ApplicationContext()
+    app.app.setApplicationName(__appname__)
+    app.app.setWindowIcon(newIcon("app"))
     # Tzutalin 201705+: Accept extra agruments to change predefined class file
     argparser = argparse.ArgumentParser()
     argparser.add_argument("image_dir", nargs="?")
@@ -1400,7 +1401,7 @@ def get_main_app(argv=[]):
 def main():
     '''construct main app and run it'''
     app, _win = get_main_app(sys.argv)
-    return app.exec_()
+    return app.app.exec_()
 
 
 if __name__ == '__main__':
