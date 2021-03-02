@@ -1417,13 +1417,13 @@ def get_main_app(argv=[]):
     win = MainWindow(args.image_dir,
                      args.predefined_classes_file)
     win.show()
-    return app, win
-
+    return app.app, win
+    
 
 def main():
     '''construct main app and run it'''
     app, _win = get_main_app(sys.argv)
-    return app.app.exec_()
+    return app.exec_()
 
 
 if __name__ == '__main__':

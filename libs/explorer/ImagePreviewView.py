@@ -16,7 +16,7 @@ class ImagePreviewView(QListWidget, AbstractExplorerViewMixin):
         itemWidgetComponent=ImagePreviewItem,
         onClicked=lambda *argv: None,
         onDoubleClicked=lambda *argv: None,
-        model=ImagePreviewModel()
+        modelClass=ImagePreviewModel
     ):
         super().__init__()
         self.parent = parent
@@ -26,7 +26,7 @@ class ImagePreviewView(QListWidget, AbstractExplorerViewMixin):
         self.itemDoubleClicked.connect(lambda item:
                                        onDoubleClicked(self._translateIndex(item)))
         self._configStyle()
-        self._model = model
+        self._model = modelClass()
 
     def _configStyle(self):
         self.setFlow(QListView.LeftToRight)
