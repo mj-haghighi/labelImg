@@ -14,6 +14,7 @@ class PngJpegDataCollector(AbstractFileDataCollector, PngJpegTypeCheckingMixin):
     def collect(self, path, name):
         extra = {}
         extra['ext'] = name.split('.')[-1]
+        extra['id'] = 0
         return extra
 
 
@@ -24,6 +25,6 @@ class DICOMDataCollector(AbstractFileDataCollector, DICOMTypeCheckingMixin):
     def collect(self, path, name):
         extra = {}
         extra['ext'] = 'dcm'
-        extra['id'] = 0 # mock        
-
+        dc = pydicom.dcmread(path)
+        extra['id'] = dc.SeriesNumber
         return extra
