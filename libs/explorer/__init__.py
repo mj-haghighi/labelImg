@@ -12,7 +12,9 @@ class ExplorerDoc(QDockWidget):
         self,
         parent  = None,
         name    = '&Explorer',
-        onImageItemClick = lambda argv: None
+        onImageItemClick = lambda argv: None,
+        onFolderDoubleClicked = lambda argv: None,
+        onIDPreviewClick = lambda argv: None
     ):
         super().__init__()
         self.treeView = TreeView(parent=self, onDoubleClicked=self.onTreeViewDoubleClicked)#, onExpand=)
@@ -21,12 +23,14 @@ class ExplorerDoc(QDockWidget):
         self.setParent(parent)
         self.setWindowTitle(name)
         self.setObjectName(ExplorerDoc.__name__)
+        self.onFolderDoubleClicked = onFolderDoubleClicked
+        self.onIDPreviewClick = onIDPreviewClick
         self._organizeLayout()
         self._IdToImageDataItem = {}
         
 
     @property
-    def IdToImageDataItem(self) -> Dict[int, List[ImageDataItem]]:
+    def idToImageDataItem(self) -> Dict[int, List[ImageDataItem]]:
         return  self._IdToImageDataItem
     
     @property
@@ -55,7 +59,7 @@ class ExplorerDoc(QDockWidget):
         self.loadIdListViewContent()
 
     def loadIdListViewContent(self):
-        IDModelItems = [self.IdToImageDataItem[ID][0].copy() for ID in self.IdToImageDataItem.keys()]
+        IDModelItems = [self.idToImageDataItem[ID][0].copy() for ID in self.idToImageDataItem.keys()]
         for item in IDModelItems:
             item.displayText = 'ID {}'.format(item.extra['id'])
         self.IdlistView.viewModel.dataItemsList = IDModelItems
@@ -63,17 +67,18 @@ class ExplorerDoc(QDockWidget):
 
 
     def loadRelatedImageDataItems(self, imageDataItem):
-        self.listView.viewModel.dataItemsList = self.IdToImageDataItem[imageDataItem.extra['id']]
+        self.listView.viewModel.dataItemsList = self.idToImageDataItem[imageDataItem.extra['id']]
         self.listView._organizeLayout(self.listView.viewModel.dataItemsList)
+        self.onIDPreviewClick(imageDataItem)
 
     def segmentImagesBaseOnIds(self, imageDataItems: List[ImageDataItem]):
         self._IdToImageDataItem = {}
         for imgData in imageDataItems:
             if not ('id' in imgData.extra.keys()):
                 imgData.extra['id'] = 0  # set default id
-            if not (imgData.extra['id'] in self.IdToImageDataItem.keys()):
-                self.IdToImageDataItem[imgData.extra['id']] = []
-            self.IdToImageDataItem[imgData.extra['id']].append(imgData)
+            if not (imgData.extra['id'] in self.idToImageDataItem.keys()):
+                self.idToImageDataItem[imgData.extra['id']] = []
+            self.idToImageDataItem[imgData.extra['id']].append(imgData)
 
     def onTreeViewDoubleClicked(self, filename, filepath):
         if filename.split('.')[-1].lower() in self.allowedExt:
@@ -83,3 +88,4 @@ class ExplorerDoc(QDockWidget):
         self.listView.clear()
         self.IdlistView.viewModel.scanDirectory(filepath, onScanDirectoryEnd=lambda imageDataItems: self.segmentImagesBaseOnIds(imageDataItems))
         self.loadIdListViewContent()
+        self.onFolderDoubleClicked((filename, filepath))
