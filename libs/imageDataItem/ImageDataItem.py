@@ -1,5 +1,6 @@
 from ..fileDataCollector import PngJpegDataCollector, DICOMDataCollector
 from ..imageProviders import PngJpegQImageProvider, DICOMQImageProvider
+from ..imageViewItem import ImagePreviewItem
 
 class ImageDataItem:
     def __init__(self, path, name):
@@ -13,6 +14,15 @@ class ImageDataItem:
 
         self._qImageProviders = [PngJpegQImageProvider(), DICOMQImageProvider()]
         self._provideQImage()
+        self._view = None
+
+    @property
+    def view(self)->ImagePreviewItem:
+        return self._view
+   
+    @view.setter
+    def view(self, v: ImagePreviewItem):
+        self._view = v
 
     @property     
     def displayText(self) -> str:
