@@ -1,0 +1,17 @@
+astroid==2.5
+autopep8==1.5.5
+isort==5.7.0
+lazy-object-proxy==1.5.2
+lxml==4.6.2
+mccabe==0.6.1
+numpy==1.19.5
+Pillow==8.1.0
+pkg-resources==0.0.0
+pycodestyle==2.6.0
+pydicom==2.1.2
+pylint==2.7.0
+PyQt5==5.10.1
+sip==4.19.8
+toml==0.10.2
+typed-ast==1.4.2
+wrapt==1.12.1
