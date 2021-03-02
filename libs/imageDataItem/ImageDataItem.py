@@ -7,12 +7,22 @@ class ImageDataItem:
         self.name = name
         self.qImage = None
         self.extra = {}
-
+        self._displayText = None
         self._dataCollectors = [PngJpegDataCollector(), DICOMDataCollector()]
         self._collectExtraData()
 
         self._qImageProviders = [PngJpegQImageProvider(), DICOMQImageProvider()]
         self._provideQImage()
+
+    @property     
+    def displayText(self) -> str:
+        if self._displayText is None:
+            return self.name
+        return self._displayText
+    
+    @displayText.setter
+    def displayText(self, dt: str):
+        self._displayText = dt
 
     def toDict(self):
         res = self.extra.copy()
@@ -33,3 +43,9 @@ class ImageDataItem:
             if qp.isMyType(self.name):
                 self.qImage = qp.QImage(self.path)
                 break;
+
+    def copy(self) -> 'ImageDataItem':
+        """ Make copy of it self
+        """
+        idi = ImageDataItem(self.path, self.name)
+        return idi
