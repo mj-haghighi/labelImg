@@ -189,7 +189,9 @@ class MainWindow(QMainWindow, WindowMixin):
         self.explorer = ExplorerDoc(
             parent=self,
             onImageItemClick=lambda imageDataItem: self.loadImageAndAnotationOnCanvas(
-                imageDataItem) if self.mayContinue() else None
+                imageDataItem) if self.mayContinue() else None,
+            onFolderDoubleClicked  = lambda argv : self.markAnotatedImages(),
+            onIDPreviewClick =  lambda argv : self.markAnotatedImages()
         )
 
         self.setCentralWidget(scroll)
@@ -1119,11 +1121,15 @@ class MainWindow(QMainWindow, WindowMixin):
         self.loadImagesAndAnotations(targetDirPath)
         self.openNextImg()
 
+    def onFolderDoubleClicked(self, argv):
+        self.markAnotatedImages()
+
     def loadImagesAndAnotations(self, folderPath):
         if not self.mayContinue() or not folderPath:
             return
         self.loadAnotations(folderPath=folderPath)
         self.loadImages(folderPath=folderPath)
+        
 
     def loadImages(self, folderPath):
         """ Loads all images in folderPath
@@ -1140,6 +1146,18 @@ class MainWindow(QMainWindow, WindowMixin):
             afm = AnotationsFileModel.read(
                 anotationsFilePath=path, reader=self.anotationReader)
             self.imagePathToAnotationPath[afm.imageFilePath] = path
+
+    def markAnotatedImages(self):
+        for imgPath in self.imagePathToAnotationPath.keys():
+            for imgDataItem in self.explorer.listView.viewModel.dataItemsList:
+                if imgPath == imgDataItem.path:
+                    imgDataItem.view.markAsAnotated()
+                    _id = imgDataItem.extra['id']
+                    for idDataItem in self.explorer.IdlistView.viewModel.dataItemsList:
+                        if idDataItem.extra['id'] == _id:
+                            idDataItem.view.markAsAnotated()
+                            break
+                    break
 
     def verifyImg(self, _value=False):
         # Proceding next image without dialog if having any label
