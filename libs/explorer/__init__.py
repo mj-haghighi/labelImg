@@ -44,7 +44,7 @@ class ExplorerDoc(QDockWidget):
         splitter.addWidget(nestedSplitter)
         nestedSplitter.addWidget(self.IdlistView)
         nestedSplitter.addWidget(self.listView)
-        nestedSplitter.setSizes([500, 500])
+        nestedSplitter.setSizes([300, 700])
         splitter.setSizes([250, 750])
 
         self.setWidget(splitter)
