@@ -2,43 +2,11 @@ import re
 from typing import List
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import QModelIndex
 from PyQt5.QtWidgets import QFileSystemModel, QDockWidget, QListView, QListWidget, QListWidgetItem, QWidget, QLabel, QVBoxLayout, QLayout
 from .ImagePreviewModel import ImagePreviewModel, ImageDataItem
 from ..mixins import AbstractExplorerViewMixin
-
-
-class ImagePreviewItem(QWidget):
-    def __init__(
-        self,
-        imageDataItem: ImageDataItem
-    ):
-        super().__init__()
-
-        self._data = imageDataItem
-        self._organizeLayout()
-
-    @property
-    def data(self)-> ImageDataItem:
-        return self._data
-
-    def _organizeLayout(self):
-        pixmap = QPixmap.fromImage(self.data.qImage)
-        pixmap = pixmap.scaledToHeight(200)
-        preview = QLabel()
-        preview.setPixmap(pixmap)
-        preview.setFixedSize(pixmap.size())
-
-        name = QLabel(self.data.name)
-        name.setAlignment(Qt.AlignCenter)
-
-        layout = QVBoxLayout()
-        layout.addWidget(preview)
-        layout.addWidget(name)
-        layout.addStretch()
-        layout.setSizeConstraint(QLayout.SetFixedSize)
-        self.setLayout(layout)
+from ..imageViewItem import ImagePreviewItem
 
 
 class ImagePreviewView(QListWidget, AbstractExplorerViewMixin):

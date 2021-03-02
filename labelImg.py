@@ -189,7 +189,9 @@ class MainWindow(QMainWindow, WindowMixin):
         self.explorer = ExplorerDoc(
             parent=self,
             onImageItemClick=lambda imageDataItem: self.loadImageAndAnotationOnCanvas(
-                imageDataItem) if self.mayContinue() else None
+                imageDataItem) if self.mayContinue() else None,
+            onFolderDoubleClicked  = lambda argv : self.markAnotatedImages(),
+            onIDPreviewClick =  lambda argv : self.markAnotatedImages()
         )
 
         self.setCentralWidget(scroll)
@@ -1119,11 +1121,15 @@ class MainWindow(QMainWindow, WindowMixin):
         self.loadImagesAndAnotations(targetDirPath)
         self.openNextImg()
 
+    def onFolderDoubleClicked(self, argv):
+        self.markAnotatedImages()
+
     def loadImagesAndAnotations(self, folderPath):
         if not self.mayContinue() or not folderPath:
             return
         self.loadAnotations(folderPath=folderPath)
         self.loadImages(folderPath=folderPath)
+        
 
     def loadImages(self, folderPath):
         """ Loads all images in folderPath
@@ -1140,6 +1146,21 @@ class MainWindow(QMainWindow, WindowMixin):
             afm = AnotationsFileModel.read(
                 anotationsFilePath=path, reader=self.anotationReader)
             self.imagePathToAnotationPath[afm.imageFilePath] = path
+
+    def markAnotatedImages(self):
+        for imgPath in self.imagePathToAnotationPath.keys():
+            self.markAnotatedImage(imgPath)
+
+    def markAnotatedImage(self, imagePath: str):
+        for imgDataItem in self.explorer.listView.viewModel.dataItemsList:
+                if imagePath == imgDataItem.path:
+                    imgDataItem.view.markAsAnotated()
+                    _id = imgDataItem.extra['id']
+                    for idDataItem in self.explorer.IdlistView.viewModel.dataItemsList:
+                        if idDataItem.extra['id'] == _id:
+                            idDataItem.view.markAsAnotated()
+                            break
+                    break
 
     def verifyImg(self, _value=False):
         # Proceding next image without dialog if having any label
@@ -1245,6 +1266,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.setClean()
             self.statusBar().showMessage('Saved to  %s' % annotationFilePath)
             self.statusBar().show()
+            self.markAnotatedImage(self.currentImageDataItem.path)
 
     def closeFile(self, _value=False):
         if not self.mayContinue():
@@ -1378,9 +1400,10 @@ def get_main_app(argv=[]):
     Standard boilerplate Qt application code.
     Do everything but app.exec_() -- so that we can test the application in one thread
     """
-    app = QApplication(argv)
-    app.setApplicationName(__appname__)
-    app.setWindowIcon(newIcon("app"))
+    from fbs_runtime.application_context.PyQt5 import ApplicationContext
+    app = ApplicationContext()
+    app.app.setApplicationName(__appname__)
+    app.app.setWindowIcon(newIcon("app"))
     # Tzutalin 201705+: Accept extra agruments to change predefined class file
     argparser = argparse.ArgumentParser()
     argparser.add_argument("image_dir", nargs="?")
@@ -1400,7 +1423,7 @@ def get_main_app(argv=[]):
 def main():
     '''construct main app and run it'''
     app, _win = get_main_app(sys.argv)
-    return app.exec_()
+    return app.app.exec_()
 
 
 if __name__ == '__main__':

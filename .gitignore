@@ -1,7 +1,5 @@
 resources/icons/.DS_Store
 
-resources.py
-
 .idea*
 labelImg.egg-info*
 
@@ -11,6 +9,8 @@ labelImg.egg-info*
 build/
 dist/
 env/
+src/
+target/
 
 tags
 cscope*
