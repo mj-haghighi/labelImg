@@ -30,7 +30,7 @@ class ImagePreviewItem(QWidget):
         preview.setPixmap(pixmap)
         preview.setFixedSize(pixmap.size())
 
-        name = QLabel(self.data.name)
+        name = QLabel(self.data.displayText)
         name.setAlignment(Qt.AlignCenter)
 
         layout = QVBoxLayout()
