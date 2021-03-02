@@ -1149,8 +1149,11 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def markAnotatedImages(self):
         for imgPath in self.imagePathToAnotationPath.keys():
-            for imgDataItem in self.explorer.listView.viewModel.dataItemsList:
-                if imgPath == imgDataItem.path:
+            self.markAnotatedImage(imgPath)
+
+    def markAnotatedImage(self, imagePath: str):
+        for imgDataItem in self.explorer.listView.viewModel.dataItemsList:
+                if imagePath == imgDataItem.path:
                     imgDataItem.view.markAsAnotated()
                     _id = imgDataItem.extra['id']
                     for idDataItem in self.explorer.IdlistView.viewModel.dataItemsList:
@@ -1263,6 +1266,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.setClean()
             self.statusBar().showMessage('Saved to  %s' % annotationFilePath)
             self.statusBar().show()
+            self.markAnotatedImage(self.currentImageDataItem.path)
 
     def closeFile(self, _value=False):
         if not self.mayContinue():
