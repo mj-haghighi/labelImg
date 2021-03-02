@@ -190,7 +190,7 @@ class MainWindow(QMainWindow, WindowMixin):
             parent=self,
             onImageItemClick=lambda imageDataItem: self.loadImageAndAnotationOnCanvas(
                 imageDataItem) if self.mayContinue() else None,
-            onFolderDoubleClicked  = lambda argv : self.markAnotatedImages(),
+            onFolderDoubleClicked  = lambda argv : self.markAnotatedGroupsAndImages(),
             onIDPreviewClick =  lambda argv : self.markAnotatedImages()
         )
 
@@ -1121,9 +1121,6 @@ class MainWindow(QMainWindow, WindowMixin):
         self.loadImagesAndAnotations(targetDirPath)
         self.openNextImg()
 
-    def onFolderDoubleClicked(self, argv):
-        self.markAnotatedImages()
-
     def loadImagesAndAnotations(self, folderPath):
         if not self.mayContinue() or not folderPath:
             return
@@ -1147,20 +1144,36 @@ class MainWindow(QMainWindow, WindowMixin):
                 anotationsFilePath=path, reader=self.anotationReader)
             self.imagePathToAnotationPath[afm.imageFilePath] = path
 
-    def markAnotatedImages(self):
-        for imgPath in self.imagePathToAnotationPath.keys():
-            self.markAnotatedImage(imgPath)
 
-    def markAnotatedImage(self, imagePath: str):
+    def markAnotatedGroupsAndImages(self):
+        for anotPahth in self.imagePathToAnotationPath.values():
+            am =  AnotationsFileModel.read(
+                    anotPahth,
+                    self.anotationReader
+                )
+            self.markAnotatedGroup(am)
+            self.markAnotatedImage(am)
+    
+    def markAnotatedImages(self):
+        for anotPahth in self.imagePathToAnotationPath.values():
+            am =  AnotationsFileModel.read(
+                    anotPahth,
+                    self.anotationReader
+                )
+            self.markAnotatedImage(am)        
+
+    def markAnotatedGroup(self, anotationFileModel: AnotationsFileModel):
+        for imgDataItem in self.explorer.IdlistView.viewModel.dataItemsList:
+            if anotationFileModel.imageId == imgDataItem.extra['id']:
+                imgDataItem.view.markAsAnotated()
+                break
+
+    def markAnotatedImage(self, anotationFileModel: AnotationsFileModel):
         for imgDataItem in self.explorer.listView.viewModel.dataItemsList:
-                if imagePath == imgDataItem.path:
-                    imgDataItem.view.markAsAnotated()
-                    _id = imgDataItem.extra['id']
-                    for idDataItem in self.explorer.IdlistView.viewModel.dataItemsList:
-                        if idDataItem.extra['id'] == _id:
-                            idDataItem.view.markAsAnotated()
-                            break
-                    break
+            if anotationFileModel.imageFilePath == imgDataItem.path:
+                imgDataItem.view.markAsAnotated()
+                break
+        
 
     def verifyImg(self, _value=False):
         # Proceding next image without dialog if having any label
@@ -1266,7 +1279,13 @@ class MainWindow(QMainWindow, WindowMixin):
             self.setClean()
             self.statusBar().showMessage('Saved to  %s' % annotationFilePath)
             self.statusBar().show()
-            self.markAnotatedImage(self.currentImageDataItem.path)
+            
+            am = AnotationsFileModel().read(
+                annotationFilePath,
+                self.anotationReader
+            )
+            self.markAnotatedImage(am)
+            self.markAnotatedGroup(am)
 
     def closeFile(self, _value=False):
         if not self.mayContinue():

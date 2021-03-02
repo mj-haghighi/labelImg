@@ -12,14 +12,20 @@ class AnotationsFileModel:
         self,
         anotations: List[AnotationModel] = None,
         isVerified=False,
-        imageFilePath=None
+        imageFilePath=None,
+        imageId=None
     ):
         self._anotations = [] if anotations is None else anotations
         self._isVerified = isVerified
         self._imageFilePath = imageFilePath
-
+        self._imageId = imageId
+    
     def setVerfication(self, isVerified):
         self._isVerified = isVerified
+
+    @property
+    def imageId(self):
+        return self._imageId
 
     @property
     def imageFilePath(self):
@@ -51,7 +57,8 @@ class AnotationsFileModel:
             anotations=[
                 AnotationModel.fromDict(anot) for anot in dataDict['anotations']],
             isVerified=dataDict['isVerified'],
-            imageFilePath=dataDict['image']['path'])
+            imageFilePath=dataDict['image']['path'],
+            imageId=dataDict['image']['id'])
 
     def write(
         self,
