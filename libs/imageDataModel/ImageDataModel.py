@@ -1,8 +1,8 @@
-from ..fileDataCollector import PngJpegDataCollector, DICOMDataCollector
+from ..imageDataCollector import PngJpegDataCollector, DICOMDataCollector
 from ..imageProviders import PngJpegQImageProvider, DICOMQImageProvider
 from ..imageViewItem import ImagePreviewItem
 
-class ImageDataItem:
+class ImageDataModel:
     def __init__(self, path, name):
         self.path = path
         self.name = name
@@ -54,8 +54,8 @@ class ImageDataItem:
                 self.qImage = qp.QImage(self.path)
                 break;
 
-    def copy(self) -> 'ImageDataItem':
+    def copy(self) -> 'ImageDataModel':
         """ Make copy of it self
         """
-        idi = ImageDataItem(self.path, self.name)
+        idi = ImageDataModel(self.path, self.name)
         return idi
