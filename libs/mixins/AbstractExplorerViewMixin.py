@@ -11,10 +11,5 @@ class AbstractExplorerViewMixin:
         """
         raise Exception("!!! this methud not implemented !!!")
 
-    @property
-    def viewModel(self):
-        """ return model of view
-        """
-        raise Exception("!!! this methud not implemented !!!")
 
 
