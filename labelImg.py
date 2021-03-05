@@ -193,7 +193,7 @@ class MainWindow(QMainWindow, WindowMixin):
             onImageItemClick=lambda imagePreview: self.loadImageAndAnotationOnCanvas(
                 imagePreview) if self.mayContinue() else None,
             onFolderDoubleClicked  = lambda argv : self.markAnotatedGroupsAndImages(),
-            onIDPreviewClick =  lambda imagePreview : self.markAnotatedImages()
+            onIDPreviewClick =  lambda imagePreview : self.markAnotatedImages() or self.setCurrentId(imagePreview.data.extra['id'])
         )
 
         self.setCentralWidget(scroll)
@@ -543,7 +543,10 @@ class MainWindow(QMainWindow, WindowMixin):
     @currentId.setter
     def currentId(self, _id: int):
         self._currentId = _id
-        self.currentIndex = 0
+        self.currentIndex = -1
+    
+    def setCurrentId(self, _id):
+        self.currentId = _id 
 
     @property
     def currentIndex(self):
@@ -1193,7 +1196,7 @@ class MainWindow(QMainWindow, WindowMixin):
                     anotPahth,
                     self.anotationReader
                 )
-            self.markAnotatedImage(am)        
+            self.markAnotatedImage(am)
 
     def markAnotatedGroup(self, anotationFileModel: AnotationsFileModel):
         for imgDataItem in self.explorer.IdlistView.viewModel.dataItemsList:

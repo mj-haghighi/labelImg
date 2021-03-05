@@ -26,11 +26,13 @@ class ExplorerDoc(QDockWidget):
         self.treeView = TreeView(
             parent=self,
             onDoubleClicked=lambda filename, filepath: self.onTreeViewDoubleClicked(
-                filename, filepath) and onFolderDoubleClicked((filename, filepath)))
+                filename, filepath) or onFolderDoubleClicked((filename, filepath)))
+        
         self.IdlistView = ImageIdPreviewListView(
             parent=self,
             onClicked=lambda imageWidget: self.loadRelatedImageDataItems(
-                imageWidget) and onIDPreviewClick(imageWidget))
+                imageWidget) or onIDPreviewClick(imageWidget))
+       
         self.listView = ImagePreviewListView(
             parent=self, onClicked=lambda imageWidget: onImageItemClick(imageWidget))
 
