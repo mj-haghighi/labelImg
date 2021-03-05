@@ -1,22 +1,21 @@
 import re
-from typing import List
+from typing import List, Callable
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import QModelIndex
 from PyQt5.QtWidgets import QFileSystemModel, QDockWidget, QListView, QListWidget, QListWidgetItem, QWidget, QLabel, QVBoxLayout, QLayout
-from .ImagePreviewModel import ImagePreviewModel, ImageDataItem
+from .ImagePreviewModel import ImagePreviewModel, ImageDataModel
 from ..mixins import AbstractExplorerViewMixin
 from ..imageViewItem import ImagePreviewItem
 
 
-class ImagePreviewView(QListWidget, AbstractExplorerViewMixin):
+class ImageIdPreviewListView(QListWidget, AbstractExplorerViewMixin):
     def __init__(
         self,
         parent=None,
         itemWidgetComponent=ImagePreviewItem,
-        onClicked=lambda *argv: None,
-        onDoubleClicked=lambda *argv: None,
-        modelClass=ImagePreviewModel
+        onClicked: Callable[[ImagePreviewItem], None] = lambda *argv: None,
+        onDoubleClicked: Callable[[ImagePreviewItem], None] = lambda *argv: None,
     ):
         super().__init__()
         self.parent = parent
@@ -26,7 +25,6 @@ class ImagePreviewView(QListWidget, AbstractExplorerViewMixin):
         self.itemDoubleClicked.connect(lambda item:
                                        onDoubleClicked(self._translateIndex(item)))
         self._configStyle()
-        self._model = modelClass()
 
     def _configStyle(self):
         self.setFlow(QListView.LeftToRight)
@@ -35,25 +33,19 @@ class ImagePreviewView(QListWidget, AbstractExplorerViewMixin):
     def _translateIndex(self, index):
         item = index
         iw = self.itemWidget(item)
-        return iw.data
+        return iw
 
-    def loadContent(self, dirPath):
+    def loadContent(self, imagesDataModel: List[ImageDataModel]):
         """ Load View content
         """
-        self.viewModel.scanDirectory(
-            path=dirPath,
-            onScanDirectoryEnd=lambda imageDataItems:
-                self._organizeLayout(imageDataItems))
+        for dModel in imagesDataModel:
+            dModel.displayText = dModel.extra['id'] 
+        self._organizeLayout(imagesDataModel)
 
-    @property
-    def viewModel(self) -> ImagePreviewModel:
-        return self._model
-
-    def _organizeLayout(self, imageDataItems: List[ImageDataItem]):
+    def _organizeLayout(self, imageDataItems: List[ImageDataModel]):
         self.clear()
-        for imageDataItem in imageDataItems:
-
-            iw = self.itemWidgetComponent(imageDataItem=imageDataItem)
+        for i, imageDataItem in enumerate(imageDataItems):
+            iw = self.itemWidgetComponent(imageDataItem=imageDataItem, indx=i)
             item = QListWidgetItem()
             item.setSizeHint(iw.sizeHint())
 
