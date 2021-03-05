@@ -1,7 +1,7 @@
 from typing import List
 from ..anotationReadersWriters import JsonAnotationReader, JsonAnotationWriter, AbstractAnotationReader, AbstractAnotationWriter
 from ..anotationModel import AnotationModel
-from ..imageDataItem import ImageDataItem
+from ..imageDataItem import ImageDataModel
 
 
 class AnotationsFileModel:
@@ -63,7 +63,7 @@ class AnotationsFileModel:
     def write(
         self,
         outputPathWithoutExtention,
-        imageDataItem: ImageDataItem,
+        imageDataItem: ImageDataModel,
         writer: AbstractAnotationWriter = JsonAnotationWriter(),
     ):
         """ Write information in anotations file using writer
