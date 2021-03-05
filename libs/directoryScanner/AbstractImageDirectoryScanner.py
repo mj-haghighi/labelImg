@@ -1,6 +1,6 @@
 import os
 from ..mixins import AbstractFileTypecheckingMixin
-
+from ..utils import natural_sort
 class AbstractImageDirectoryScanner(AbstractFileTypecheckingMixin):
     """ Abstract Directory Scanner
     """
@@ -16,5 +16,5 @@ class AbstractImageDirectoryScanner(AbstractFileTypecheckingMixin):
             fPath = os.path.join(path, fname)
             if self.isMyType(name=fname, path=fPath):
                 result.append(fPath)
-
+        result = sorted(result)
         return result

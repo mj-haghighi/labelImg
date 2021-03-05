@@ -32,5 +32,5 @@ class ImageDirectoryScanner(AbstractImageDirectoryScanner):
             for scanner in self.scanners:
                 if scanner.isMyType(name=fname, path=fPath):
                     result.append(fPath)
-
+            result = sorted(result)
         return result
