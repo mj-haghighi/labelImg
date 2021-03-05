@@ -13,8 +13,3 @@ class AbstractExplorerModelMixin:
         """ return list of data items
         """
         raise Exception("!!! this methud not implemented !!!")
-
-    def scanDirectory(self, path='', onScanDirectoryEnd: Callable = lambda *argv: None):
-        """ scan directory for files and folders
-        """
-        raise Exception("!!! this methud not implemented !!!")
