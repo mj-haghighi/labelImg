@@ -1,11 +1,12 @@
+import os
 from typing import List
-from .AbstractDirectoryScanner import AbstractDirectoryScanner
 from .DICOMDirectoryScanner import DICOMDirectoryScanner
 from .PngJpegDirectoryScanner import PngJpegDirectoryScanner
+from .AbstractImageDirectoryScanner import AbstractImageDirectoryScanner
 from ..SingletonMeta import SingletonMeta
 
 
-class ImageDirectoryScanner(AbstractDirectoryScanner, metaclass=SingletonMeta):
+class ImageDirectoryScanner(AbstractImageDirectoryScanner):
     """ Directory scanner to looking for valid images
     """
 
@@ -25,8 +26,9 @@ class ImageDirectoryScanner(AbstractDirectoryScanner, metaclass=SingletonMeta):
 
         result = []
 
-        for fname in os.listdir(path):
-            fPath = os.path.join(path, fname)
+        for fname in os.listdir(folderPath):
+            fPath = os.path.join(folderPath, fname)
+            fpath = os.path.abspath(fPath)
             for scanner in self.scanners:
                 if scanner.isMyType(name=fname, path=fPath):
                     result.append(fPath)

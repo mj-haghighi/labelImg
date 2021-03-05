@@ -44,13 +44,13 @@ class ImageDataModel:
         
     def _collectExtraData(self):
         for dc in self._dataCollectors:
-            if dc.isMyType(self.name):
+            if dc.isMyType(self.name, path=self.path):
                 self.extra = dc.collect(self.path, self.name)
                 break
 
     def _provideQImage(self):
         for qp in self._qImageProviders:
-            if qp.isMyType(self.name):
+            if qp.isMyType(self.name, self.path):
                 self.qImage = qp.QImage(self.path)
                 break;
 

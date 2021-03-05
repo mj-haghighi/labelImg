@@ -1,10 +1,10 @@
-from .AbstractDirectoryScanner import AbstractDirectoryScanner
+from .AbstractImageDirectoryScanner import AbstractImageDirectoryScanner
 from ..mixins import DICOMTypeCheckingMixin
 from ..SingletonMeta import SingletonMeta
 
 
 class DICOMDirectoryScanner(
-    AbstractDirectoryScanner,
+    AbstractImageDirectoryScanner,
     DICOMTypeCheckingMixin,
     metaclass=SingletonMeta
 ):

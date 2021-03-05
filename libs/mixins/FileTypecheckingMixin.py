@@ -22,13 +22,13 @@ class DICOMTypeCheckingMixin(AbstractFileTypecheckingMixin):
     def __init__(self):
         self.validExt = ['dcm']
 
-    def isMyType(self, name: str, path: str = None):
+    def isMyType(self, name: str, path: str):
         if name.endswith(tuple(self.validExt)):
             return True
         try:
             pydicom.dcmread(path)
             return True
-        except e:
+        except:
             return False
 
 

@@ -27,10 +27,9 @@ class ImageDataRepository(AbstractRepository, metaclass=SingletonMeta):
 
     def AddItem(self, item: ImageDataModel):
         super().AddItem(item)
-        if 'id' in item.extra.keys():
+        if 'id' not in item.extra.keys():
             item.extra['id'] = 0
 
         if item.extra['id'] not in self.idToItems.keys():
             self.idToItems[item.extra['id']] = []
-        
         self.idToItems[item.extra['id']].append(item)

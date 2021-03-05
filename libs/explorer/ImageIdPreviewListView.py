@@ -4,7 +4,7 @@ from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import QModelIndex
 from PyQt5.QtWidgets import QFileSystemModel, QDockWidget, QListView, QListWidget, QListWidgetItem, QWidget, QLabel, QVBoxLayout, QLayout
-from .ImagePreviewModel import ImagePreviewModel, ImageDataModel
+from ..imageDataModel import ImageDataModel
 from ..mixins import AbstractExplorerViewMixin
 from ..imageViewItem import ImagePreviewItem
 
@@ -39,13 +39,13 @@ class ImageIdPreviewListView(QListWidget, AbstractExplorerViewMixin):
         """ Load View content
         """
         for dModel in imagesDataModel:
-            dModel.displayText = dModel.extra['id'] 
+            dModel.displayText = 'ID: {}'.format(dModel.extra['id']) 
         self._organizeLayout(imagesDataModel)
 
-    def _organizeLayout(self, imageDataItems: List[ImageDataModel]):
+    def _organizeLayout(self, imagesDataModel: List[ImageDataModel]):
         self.clear()
-        for i, imageDataItem in enumerate(imageDataItems):
-            iw = self.itemWidgetComponent(imageDataItem=imageDataItem, indx=i)
+        for i, imageDataItem in enumerate(imagesDataModel):
+            iw = self.itemWidgetComponent(imageDataItem, indx=i)
             item = QListWidgetItem()
             item.setSizeHint(iw.sizeHint())
 

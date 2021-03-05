@@ -105,4 +105,4 @@ def natural_sort(list, key=lambda s:s):
 def baseName(path: str):
     """ Return file base name
     """
-    re.split(r'\\|/', path)[-1]
+    return re.split(r'\\|/', path)[-1]

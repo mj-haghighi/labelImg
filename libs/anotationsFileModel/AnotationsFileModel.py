@@ -1,7 +1,7 @@
 from typing import List
 from ..anotationReadersWriters import JsonAnotationReader, JsonAnotationWriter, AbstractAnotationReader, AbstractAnotationWriter
 from ..anotationModel import AnotationModel
-from ..imageDataItem import ImageDataModel
+from ..imageDataModel import ImageDataModel
 
 
 class AnotationsFileModel:

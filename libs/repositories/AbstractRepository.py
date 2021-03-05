@@ -7,7 +7,7 @@ class AbstractRepository:
         self._items = []
 
     @property
-    def items():
+    def items(self):
         return self._items
 
     def AddItem(self, item):

@@ -1,10 +1,10 @@
-from .AbstractDirectoryScanner import AbstractDirectoryScanner
+from .AbstractImageDirectoryScanner import AbstractImageDirectoryScanner
 from ..mixins import PngJpegTypeCheckingMixin
 from ..SingletonMeta import SingletonMeta
 
 
 class PngJpegDirectoryScanner(
-    AbstractDirectoryScanner,
+    AbstractImageDirectoryScanner,
     PngJpegTypeCheckingMixin,
     metaclass=SingletonMeta
 ):

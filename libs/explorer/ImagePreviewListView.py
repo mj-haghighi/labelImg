@@ -4,7 +4,7 @@ from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import QModelIndex
 from PyQt5.QtWidgets import QFileSystemModel, QDockWidget, QListView, QListWidget, QListWidgetItem, QWidget, QLabel, QVBoxLayout, QLayout
-from .ImagePreviewModel import ImagePreviewModel, ImageDataModel
+from ..imageDataModel import ImageDataModel
 from ..mixins import AbstractExplorerViewMixin
 from ..imageViewItem import ImagePreviewItem
 
@@ -32,7 +32,7 @@ class ImagePreviewListView(QListWidget, AbstractExplorerViewMixin):
     def _translateIndex(self, index):
         item = index
         iw = self.itemWidget(item)
-        return iw.data
+        return iw
 
     def loadContent(self, imagesDataModel: List[ImageDataModel]):
         """ Load View content
@@ -41,7 +41,7 @@ class ImagePreviewListView(QListWidget, AbstractExplorerViewMixin):
 
     def _organizeLayout(self, imagesDataModel: List[ImageDataModel]):
         self.clear()
-        for i, imageDataItem in enumerate(imagesDataModel):
+        for i, imageDataModel in enumerate(imagesDataModel):
             iw = self.itemWidgetComponent(imageDataModel, indx=i)
             item = QListWidgetItem()
             item.setSizeHint(iw.sizeHint())

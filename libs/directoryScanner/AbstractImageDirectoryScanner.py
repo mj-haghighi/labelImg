@@ -1,7 +1,7 @@
 import os
 from ..mixins import AbstractFileTypecheckingMixin
 
-class AbstractDirectoryScanner(AbstractFileTypecheckingMixin):
+class AbstractImageDirectoryScanner(AbstractFileTypecheckingMixin):
     """ Abstract Directory Scanner
     """
 
