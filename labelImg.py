@@ -50,12 +50,14 @@ from libs.create_ml_io import JSON_EXT
 from libs.ustr import ustr
 from libs.hashableQListWidgetItem import HashableQListWidgetItem
 from libs.explorer import ExplorerDoc
-from libs.explorer.ImagePreviewModel import ImageDataItem
+from libs.imageDataModel import ImageDataModel 
 from libs.anotationCollector import JsonAnotationCollector
 from libs.anotationReadersWriters import JsonAnotationReader, JsonAnotationWriter
 from libs.anotationsFileModel import AnotationsFileModel
 from libs.anotationModel import AnotationModel
 from libs.anotationView import AnotationView
+from libs.repositories import ImageDataRepository
+from libs.imageViewItem import ImagePreviewItem
 __appname__ = 'labelImg'
 
 
@@ -188,10 +190,10 @@ class MainWindow(QMainWindow, WindowMixin):
         # Create explorer
         self.explorer = ExplorerDoc(
             parent=self,
-            onImageItemClick=lambda imageDataItem: self.loadImageAndAnotationOnCanvas(
-                imageDataItem) if self.mayContinue() else None,
+            onImageItemClick=lambda imagePreview: self.loadImageAndAnotationOnCanvas(
+                imagePreview) if self.mayContinue() else None,
             onFolderDoubleClicked  = lambda argv : self.markAnotatedGroupsAndImages(),
-            onIDPreviewClick =  lambda argv : self.markAnotatedImages()
+            onIDPreviewClick =  lambda imagePreview : self.markAnotatedImages()
         )
 
         self.setCentralWidget(scroll)
@@ -448,7 +450,10 @@ class MainWindow(QMainWindow, WindowMixin):
         self.statusBar().show()
 
         # Application state.
-        self.currentImageDataItem = None
+        self.imageDataRepository = ImageDataRepository()
+        self._currentId = None
+        self._currentIndex = 0
+
         self.filePath = ustr(defaultFilename)
         self.lastOpenDir = None
         self.recentFiles = []
@@ -532,6 +537,35 @@ class MainWindow(QMainWindow, WindowMixin):
         self.pixmapProviders = []
 
     @property
+    def currentId(self):
+        return self._currentId
+    
+    @currentId.setter
+    def currentId(self, _id: int):
+        self._currentId = _id
+        self.currentIndex = 0
+
+    @property
+    def currentIndex(self):
+        return self._currentIndex
+    
+    @currentIndex.setter
+    def currentIndex(self, indx: int):
+        self._currentIndex = indx
+
+
+    @property
+    def currentImageDataItem(self) -> ImageDataModel:
+        if self.currentId is None:
+            if len(self.imageDataRepository.idToItems.keys()) > 0:
+                self.currentId = list(
+                    self.imageDataRepository.idToItems.keys())[0]
+                print('self.currentId set to: ', self.currentId)
+            else:
+                return None
+        return self.imageDataRepository.idToItems[self.currentId][self.currentIndex]
+        
+    @property
     def imagePathToAnotationPath(self) -> Dict[str, str]:
         return self._imagePathToAnotationPath
 
@@ -610,8 +644,6 @@ class MainWindow(QMainWindow, WindowMixin):
         self.itemsToShapes.clear()
         self.shapesToItems.clear()
         self.labelList.clear()
-        self.currentImageDataItem = None
-        self.imageData = None
         self.labelFile = None
         self.canvas.resetState()
         self.labelCoordinates.clear()
@@ -953,12 +985,9 @@ class MainWindow(QMainWindow, WindowMixin):
         for item, shape in self.itemsToShapes.items():
             item.setCheckState(Qt.Checked if value else Qt.Unchecked)
 
-    def setItemSelectedInExplorerPreview(self, imageDataItem):
-        if imageDataItem not in self.explorer.imageDataItems:
-            return
-        index = self.explorer.imageDataItems.index(imageDataItem)
-        fileWidgetItem = self.explorer.listView.item(index)
-        fileWidgetItem.setSelected(True)
+    def setItemSelectedInExplorerPreview(self):
+        WidgetItem = self.explorer.listView.item(self.currentIndex)
+        WidgetItem.setSelected(True)
 
     def setDefaultAnotationSaveFolderAndPath(self):
         imgPath = self.currentImageDataItem.path
@@ -970,22 +999,26 @@ class MainWindow(QMainWindow, WindowMixin):
             self.defaultAnotationSavePath = None
             self.defaultAnotationSaveFolder = os.path.dirname(imgPath)
 
-    def loadImageAndAnotationOnCanvas(self, imageDataItem: ImageDataItem):
+    def loadImageAndAnotationOnCanvas(self, imagePreview: ImagePreviewItem = None):
         self.resetState()
-        self.loadImageOnCanvas(imageDataItem)
+        if imagePreview is None:
+            self.loadImageOnCanvas(self.currentImageDataItem)
+        else:
+            self.currentIndex = imagePreview.indx
+            self.loadImageOnCanvas(self.currentImageDataItem)
+            
         self.setDefaultAnotationSaveFolderAndPath()
-        if imageDataItem.path in self.imagePathToAnotationPath.keys():
-            anotPath = self.imagePathToAnotationPath[imageDataItem.path]
+        if self.currentImageDataItem.path in self.imagePathToAnotationPath.keys():
+            anotPath = self.imagePathToAnotationPath[self.currentImageDataItem.path]
             self.loadAnotationsOnCanvas(anotPath)
 
 
-    def loadImageOnCanvas(self, imageDataItem: ImageDataItem):
+    def loadImageOnCanvas(self, imageDataItem: ImageDataModel):
         """ loadImageOnCanvas
         """
-        self.currentImageDataItem = imageDataItem
         self.canvas.setEnabled(False)
         self.canvas.verified = False
-        self.setItemSelectedInExplorerPreview(imageDataItem)
+        self.setItemSelectedInExplorerPreview()
         self.canvas.loadPixmap(QPixmap.fromImage(imageDataItem.qImage))
         self.setClean()
         self.paintCanvas()
@@ -1204,18 +1237,16 @@ class MainWindow(QMainWindow, WindowMixin):
 
         if not self.mayContinue():
             return
-        if len(self.explorer.imageDataItems) <= 0:
+        
+        if self.imageDataRepository.itemCount <= 0:
             return
 
-        if self.currentImageDataItem is None or not (self.currentImageDataItem in self.explorer.imageDataItems):
-            self.currentImageDataItem = self.explorer.imageDataItems[0]
-        else:
-            currIndex = self.explorer.imageDataItems.index(
-                self.currentImageDataItem)
-            currIndex = (currIndex - 1) % len(self.explorer.imageDataItems)
-            self.currentImageDataItem = self.explorer.imageDataItems[currIndex]
+        if self.currentImageDataItem is None:
+            return
+        
+        self.currentIndex = (self.currentIndex - 1) % len(self.imageDataRepository.idToItems[self.currentId])
 
-        self.loadImageAndAnotationOnCanvas(self.currentImageDataItem)
+        self.loadImageAndAnotationOnCanvas()
 
     def openNextImg(self, _value=False):
         # Proceding prev image without dialog if having any label
@@ -1229,18 +1260,16 @@ class MainWindow(QMainWindow, WindowMixin):
         if not self.mayContinue():
             return
 
-        if len(self.explorer.imageDataItems) <= 0:
+        if self.imageDataRepository.itemCount <= 0:
             return
 
-        if self.currentImageDataItem is None or not (self.currentImageDataItem in self.explorer.imageDataItems):
-            self.currentImageDataItem = self.explorer.imageDataItems[0]
-        else:
-            currIndex = self.explorer.imageDataItems.index(
-                self.currentImageDataItem)
-            currIndex = (currIndex + 1) % len(self.explorer.imageDataItems)
-            self.currentImageDataItem = self.explorer.imageDataItems[currIndex]
+        if self.currentImageDataItem is None:
+            return
+        
 
-        self.loadImageAndAnotationOnCanvas(self.currentImageDataItem)
+        self.currentIndex = (self.currentIndex + 1) % len(self.imageDataRepository.idToItems[self.currentId])
+        self.loadImageAndAnotationOnCanvas()
+
 
     def saveFile(self, _value=False):
         if self.defaultAnotationSavePath is not None:
@@ -1437,7 +1466,6 @@ def get_main_app(argv=[]):
                      args.predefined_classes_file)
     win.show()
     return app.app, win
-    
 
 def main():
     '''construct main app and run it'''
