@@ -1,45 +1,46 @@
-from typing import List, Dict
+import os
+from typing import List, Dict, Callable
 from PyQt5.QtWidgets import QDockWidget, QHBoxLayout, QListWidget, QWidget, QSplitter
 from PyQt5.QtCore import Qt
 from .TreeVeiwExplorer import TreeView
-from .ListVeiwExplorer import ListView
-from .ImagePreviewView import ImagePreviewView 
-from ..imageDataItem import ImageDataItem
+from .ImageIdPreviewListView import ImageIdPreviewListView
+from .ImagePreviewListView import ImagePreviewListView
+from ..imageDataModel import ImageDataModel
+from ..imageViewItem import ImagePreviewItem
+from ..directoryScanner import ImageDirectoryScanner
+from ..repositories import ImageDataRepository
+from ..utils import baseName
+
 
 class ExplorerDoc(QDockWidget):
 
     def __init__(
         self,
-        parent  = None,
-        name    = '&Explorer',
-        onImageItemClick = lambda argv: None,
-        onFolderDoubleClicked = lambda argv: None,
-        onIDPreviewClick = lambda argv: None
+        parent=None,
+        name='&Explorer',
+        onImageItemClick: Callable[[ImagePreviewItem], None] = lambda argv: None,
+        onIDPreviewClick: Callable[[ImagePreviewItem], None] = lambda argv: None,
+        onFolderDoubleClicked=lambda argv: None
     ):
         super().__init__()
-        self.treeView = TreeView(parent=self, onDoubleClicked=self.onTreeViewDoubleClicked)#, onExpand=)
-        self.IdlistView = ImagePreviewView(parent=self, onClicked=lambda imageDataItem: self.loadRelatedImageDataItems(imageDataItem))#, onClick=)
-        self.listView = ImagePreviewView(parent=self, onClicked=onImageItemClick)#, onClick=)
+        self.treeView = TreeView(
+            parent=self,
+            onDoubleClicked=lambda filename, filepath: self.onTreeViewDoubleClicked(
+                filename, filepath) and onFolderDoubleClicked((filename, filepath)))
+        self.IdlistView = ImageIdPreviewListView(
+            parent=self,
+            onClicked=lambda imageWidget: self.loadRelatedImageDataItems(
+                imageWidget) and onIDPreviewClick(imageWidget))
+        self.listView = ImagePreviewListView(
+            parent=self, onClicked=lambda imageWidget: onImageItemClick(imageWidget))
+
         self.setParent(parent)
         self.setWindowTitle(name)
         self.setObjectName(ExplorerDoc.__name__)
         self.onFolderDoubleClicked = onFolderDoubleClicked
-        self.onIDPreviewClick = onIDPreviewClick
         self._organizeLayout()
-        self._IdToImageDataItem = {}
-        
-
-    @property
-    def idToImageDataItem(self) -> Dict[int, List[ImageDataItem]]:
-        return  self._IdToImageDataItem
-    
-    @property
-    def allowedExt(self):
-        return ['jpeg', 'png']
-    
-    @property
-    def imageDataItems(self):
-        return self.listView.viewModel.dataItemsList
+        self.imageDataRepository = ImageDataRepository()
+        self.scanner = ImageDirectoryScanner()
 
     def _organizeLayout(self):
         splitter = QSplitter(Qt.Horizontal)
@@ -53,39 +54,48 @@ class ExplorerDoc(QDockWidget):
 
         self.setWidget(splitter)
 
-    def loadContent(self, path):
-        self.treeView.loadContent(dirPath=path)
-        self.IdlistView.viewModel.scanDirectory(path, onScanDirectoryEnd=lambda imageDataItems: self.segmentImagesBaseOnIds(imageDataItems))
+    def loadContent(self, folderPath):
+        self.treeView.loadContent(dirPath=folderPath)
+        imgsPath = self.scanner.scan(folderPath)
+        for iPath in imgsPath:
+            self.imageDataRepository.AddItem(
+                ImageDataModel(
+                    path=iPath,
+                    name=baseName(iPath)
+                )
+            )
         self.loadIdListViewContent()
 
     def loadIdListViewContent(self):
-        IDModelItems = [self.idToImageDataItem[ID][0].copy() for ID in self.idToImageDataItem.keys()]
-        for item in IDModelItems:
-            item.displayText = 'ID {}'.format(item.extra['id'])
-        self.IdlistView.viewModel.dataItemsList = IDModelItems
-        self.IdlistView._organizeLayout(self.IdlistView.viewModel.dataItemsList)
+        l = []
+        for key in self.imageDataRepository.idToItems.keys():
+            idModel = self.imageDataRepository.idToItems[key][0].copy()
+            l.append(idModel)
+        self.IdlistView.loadContent(l)
 
+    def loadImagePreviewListContent(self, _id):
+        self.listView.loadContent(
+            self.imageDataRepository.idToItems[_id]
+        )
 
-    def loadRelatedImageDataItems(self, imageDataItem):
-        self.listView.viewModel.dataItemsList = self.idToImageDataItem[imageDataItem.extra['id']]
-        self.listView._organizeLayout(self.listView.viewModel.dataItemsList)
-        self.onIDPreviewClick(imageDataItem)
+    def loadRelatedImageDataItems(self, widget: ImagePreviewItem):
+        _id = widget.data.extra['id']
+        self.loadImagePreviewListContent(_id)
 
-    def segmentImagesBaseOnIds(self, imageDataItems: List[ImageDataItem]):
-        self._IdToImageDataItem = {}
-        for imgData in imageDataItems:
-            if not ('id' in imgData.extra.keys()):
-                imgData.extra['id'] = 0  # set default id
-            if not (imgData.extra['id'] in self.idToImageDataItem.keys()):
-                self.idToImageDataItem[imgData.extra['id']] = []
-            self.idToImageDataItem[imgData.extra['id']].append(imgData)
-
-    def onTreeViewDoubleClicked(self, filename, filepath):
-        if filename.split('.')[-1].lower() in self.allowedExt:
+    def onTreeViewDoubleClicked(self, folderName, folderPath):
+        if os.path.isfile(folderPath):
             return
         
-        self.IdlistView.clear()
+        self.imageDataRepository.clear()
         self.listView.clear()
-        self.IdlistView.viewModel.scanDirectory(filepath, onScanDirectoryEnd=lambda imageDataItems: self.segmentImagesBaseOnIds(imageDataItems))
+        self.IdlistView.clear()
+
+        imgsPath = self.scanner.scan(folderPath)
+        for iPath in imgsPath:
+            self.imageDataRepository.AddItem(
+                ImageDataModel(
+                    path=iPath,
+                    name=baseName(iPath)
+                )
+            )
         self.loadIdListViewContent()
-        self.onFolderDoubleClicked((filename, filepath))
