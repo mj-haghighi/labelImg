@@ -1,6 +1,8 @@
+import pydicom
+
 class AbstractFileTypecheckingMixin:
 
-    def isMyType(self, name: str):
+    def isMyType(self, name: str, path: str = None):
         raise Exception("this methoud is not implemented")
 
 
@@ -9,7 +11,7 @@ class PngJpegTypeCheckingMixin(AbstractFileTypecheckingMixin):
     def __init__(self):
         self.validExt = ['png', 'jpeg', 'jpg']
 
-    def isMyType(self, name: str):
+    def isMyType(self, name: str, path: str = None):
         if name.endswith(tuple(self.validExt)):
             return True
         return False
@@ -19,16 +21,19 @@ class DICOMTypeCheckingMixin(AbstractFileTypecheckingMixin):
 
     def __init__(self):
         self.validExt = ['dcm']
-        self.validPrefix = ['I']
 
-    def isMyType(self, name: str):
-        if name.endswith(tuple(self.validExt)) or name.startswith(tuple(self.validPrefix)):
+    def isMyType(self, name: str, path: str = None):
+        if name.endswith(tuple(self.validExt)):
             return True
-        return False
+        try:
+            pydicom.dcmread(path)
+            return True
+        except e:
+            return False
 
 
 class XMLTypeCheckingMixin(AbstractFileTypecheckingMixin):
-    
+
     def __init__(self):
         self.validExt = ['xml']
 
@@ -37,8 +42,9 @@ class XMLTypeCheckingMixin(AbstractFileTypecheckingMixin):
             return True
         return False
 
+
 class JsonTypeCheckingMixin(AbstractFileTypecheckingMixin):
-    
+
     def __init__(self):
         self.validExt = ['json']
 
@@ -46,4 +52,3 @@ class JsonTypeCheckingMixin(AbstractFileTypecheckingMixin):
         if name.endswith(tuple(self.validExt)):
             return True
         return False
-
