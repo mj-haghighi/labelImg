@@ -1,7 +1,7 @@
 from math import sqrt
 from libs.ustr import ustr
 import hashlib
-import re
+import re, os
 import sys
 
 try:
@@ -103,6 +103,12 @@ def natural_sort(list, key=lambda s:s):
     list.sort(key=sort_key)
 
 def baseName(path: str):
-    """ Return file base name
+    """ Return file`s base name
     """
     return re.split(r'\\|/', path)[-1]
+
+def baseDir(path: str):
+    """ Return file`s dir
+    """
+    s = re.split(r'\\|/', path)[:-1]
+    return os.sep.join(s)
