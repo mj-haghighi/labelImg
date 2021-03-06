@@ -24,6 +24,11 @@ class ImagePreviewListView(QListWidget, AbstractExplorerViewMixin):
         self.itemDoubleClicked.connect(lambda item:
                                        onDoubleClicked(self._translateIndex(item)))
         self._configStyle()
+        self._items = []
+
+    @property
+    def items(self) -> List[ImagePreviewItem]:
+        return self._items
 
     def _configStyle(self):
         self.setFlow(QListView.LeftToRight)
@@ -41,8 +46,10 @@ class ImagePreviewListView(QListWidget, AbstractExplorerViewMixin):
 
     def _organizeLayout(self, imagesDataModel: List[ImageDataModel]):
         self.clear()
+        self._items = []
         for i, imageDataModel in enumerate(imagesDataModel):
             iw = self.itemWidgetComponent(imageDataModel, indx=i)
+            self.items.append(iw)
             item = QListWidgetItem()
             item.setSizeHint(iw.sizeHint())
             self.addItem(item)
