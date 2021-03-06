@@ -58,6 +58,7 @@ from libs.anotationModel import AnotationModel
 from libs.anotationView import AnotationView
 from libs.repositories import ImageDataRepository
 from libs.imageViewItem import ImagePreviewItem
+from libs.utils import baseDir
 __appname__ = 'labelImg'
 
 
@@ -1199,15 +1200,16 @@ class MainWindow(QMainWindow, WindowMixin):
             self.markAnotatedImage(am)
 
     def markAnotatedGroup(self, anotationFileModel: AnotationsFileModel):
-        for imgDataItem in self.explorer.IdlistView.viewModel.dataItemsList:
-            if anotationFileModel.imageId == imgDataItem.extra['id']:
-                imgDataItem.view.markAsAnotated()
+        for imagePreview in self.explorer.IdlistView.items:
+            if anotationFileModel.imageId == imagePreview.data.extra['id'] and\
+            baseDir(anotationFileModel.imageFilePath) == baseDir(imagePreview.data.path):
+                imagePreview.markAsAnotated()
                 break
 
     def markAnotatedImage(self, anotationFileModel: AnotationsFileModel):
-        for imgDataItem in self.explorer.listView.viewModel.dataItemsList:
-            if anotationFileModel.imageFilePath == imgDataItem.path:
-                imgDataItem.view.markAsAnotated()
+        for imagePreview in self.explorer.listView.items:
+            if anotationFileModel.imageFilePath == imagePreview.data.path:
+                imagePreview.markAsAnotated()
                 break
         
 
