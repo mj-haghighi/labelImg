@@ -531,8 +531,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.statusBar().addPermanentWidget(self.labelCoordinates)
 
         # Open Dir if deafult file
-        if self.filePath and os.path.isdir(self.filePath):
-            self.openDirDialog(dirpath=self.filePath, silent=True)
+        # if self.filePath and os.path.isdir(self.filePath):
+        #     self.openDirDialog(dirpath=self.filePath, silent=True)
 
         # QPixmap providers
         self.pixmapProviders = []
@@ -1014,9 +1014,14 @@ class MainWindow(QMainWindow, WindowMixin):
             self.loadImageOnCanvas(self.currentImageDataItem)
             
         self.setDefaultAnotationSaveFolderAndPath()
-        if self.currentImageDataItem.path in self.imagePathToAnotationPath.keys():
+        anotPath = None
+        if self.currentImageDataItem.localPath in self.imagePathToAnotationPath.keys():
+            anotPath = self.imagePathToAnotationPath[self.currentImageDataItem.localPath]
+        elif self.currentImageDataItem.path in self.imagePathToAnotationPath.keys():
             anotPath = self.imagePathToAnotationPath[self.currentImageDataItem.path]
+        if anotPath is not None:
             self.loadAnotationsOnCanvas(anotPath)
+
 
 
     def loadImageOnCanvas(self, imageDataItem: ImageDataModel):
@@ -1170,7 +1175,6 @@ class MainWindow(QMainWindow, WindowMixin):
     def loadImages(self, folderPath):
         """ Loads all images in folderPath
         """
-        self.lastOpenDir = folderPath
         self.dirname = folderPath
         self.explorer.loadContent(self.lastOpenDir)
 
@@ -1185,18 +1189,18 @@ class MainWindow(QMainWindow, WindowMixin):
 
 
     def markAnotatedGroupsAndImages(self):
-        for anotPahth in self.imagePathToAnotationPath.values():
+        for anotPath in self.imagePathToAnotationPath.values():
             am =  AnotationsFileModel.read(
-                    anotPahth,
+                    anotPath,
                     self.anotationReader
                 )
             self.markAnotatedGroup(am)
             self.markAnotatedImage(am)
     
     def markAnotatedImages(self):
-        for anotPahth in self.imagePathToAnotationPath.values():
+        for anotPath in self.imagePathToAnotationPath.values():
             am =  AnotationsFileModel.read(
-                    anotPahth,
+                    anotPath,
                     self.anotationReader
                 )
             self.markAnotatedImage(am)
@@ -1204,16 +1208,18 @@ class MainWindow(QMainWindow, WindowMixin):
     def markAnotatedGroup(self, anotationFileModel: AnotationsFileModel):
         for imagePreview in self.explorer.IdlistView.items:
             if anotationFileModel.imageId == imagePreview.data.extra['id'] and\
-            baseDir(anotationFileModel.imageFilePath) == baseDir(imagePreview.data.path):
+                (baseDir(anotationFileModel.imageFilePath) == baseDir(imagePreview.data.localPath) or\
+                 baseDir(anotationFileModel.imageFilePath) == baseDir(imagePreview.data.path)):
                 imagePreview.markAsAnotated()
                 break
 
     def markAnotatedImage(self, anotationFileModel: AnotationsFileModel):
         for imagePreview in self.explorer.listView.items:
-            if anotationFileModel.imageFilePath == imagePreview.data.path:
+            if anotationFileModel.imageFilePath == imagePreview.data.localPath or\
+                    anotationFileModel.imageFilePath == imagePreview.data.path:
                 imagePreview.markAsAnotated()
                 break
-        
+
 
     def verifyImg(self, _value=False):
         # Proceding next image without dialog if having any label

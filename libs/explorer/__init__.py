@@ -43,6 +43,11 @@ class ExplorerDoc(QDockWidget):
         self._organizeLayout()
         self.imageDataRepository = ImageDataRepository()
         self.scanner = ImageDirectoryScanner()
+        self._root = None
+
+    @property
+    def root(self):
+        return self._root
 
     def _organizeLayout(self):
         splitter = QSplitter(Qt.Horizontal)
@@ -57,13 +62,15 @@ class ExplorerDoc(QDockWidget):
         self.setWidget(splitter)
 
     def loadContent(self, folderPath):
+        self._root = folderPath
         self.treeView.loadContent(dirPath=folderPath)
-        imgsPath = self.scanner.scan(folderPath)
-        for iPath in imgsPath:
+        imgsGlobalPath = self.scanner.scan(folderPath)
+        for iPath in imgsGlobalPath:
             self.imageDataRepository.AddItem(
                 ImageDataModel(
                     path=iPath,
-                    name=baseName(iPath)
+                    name=baseName(iPath),
+                    root=self.root
                 )
             )
         self.loadIdListViewContent()
@@ -92,12 +99,13 @@ class ExplorerDoc(QDockWidget):
         self.listView.clear()
         self.IdlistView.clear()
 
-        imgsPath = self.scanner.scan(folderPath)
-        for iPath in imgsPath:
+        imgsGlobalPath = self.scanner.scan(folderPath)
+        for iPath in imgsGlobalPath:
             self.imageDataRepository.AddItem(
                 ImageDataModel(
                     path=iPath,
-                    name=baseName(iPath)
+                    name=baseName(iPath),
+                    root=self.root
                 )
             )
         self.loadIdListViewContent()
