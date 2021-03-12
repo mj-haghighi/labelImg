@@ -1,1 +1,3 @@
 from .ImageDataRepository import ImageDataRepository
+from .AnotatedImagesRepository import AnotatedImagesRepository
+from .CaseRepository import CaseRepository

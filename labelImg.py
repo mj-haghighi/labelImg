@@ -3,7 +3,7 @@
 import argparse
 import codecs
 import distutils.spawn
-import os.path
+import os
 import platform
 import re
 import sys
@@ -53,10 +53,10 @@ from libs.explorer import ExplorerDoc
 from libs.imageDataModel import ImageDataModel 
 from libs.anotationCollector import JsonAnotationCollector
 from libs.anotationReadersWriters import JsonAnotationReader, JsonAnotationWriter
-from libs.anotationsFileModel import AnotationsFileModel
 from libs.anotationModel import AnotationModel
 from libs.anotationView import AnotationView
-from libs.repositories import ImageDataRepository
+from libs.repositories import ImageDataRepository, AnotatedImagesRepository, CaseRepository
+from libs.caseModel import CaseModel
 from libs.imageViewItem import ImagePreviewItem
 from libs.utils import baseDir
 __appname__ = 'labelImg'
@@ -452,6 +452,10 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Application state.
         self.imageDataRepository = ImageDataRepository()
+        self.anotatedCaseRepository = CaseRepository()
+        self._unsavedAppendedAnotations = []
+        self._unsavedDeletedAnotations = []
+        self._currentCase = None
         self._currentId = None
         self._currentIndex = 0
 
@@ -556,6 +560,23 @@ class MainWindow(QMainWindow, WindowMixin):
     @currentIndex.setter
     def currentIndex(self, indx: int):
         self._currentIndex = indx
+
+    @property
+    def currentCase(self) -> CaseModel:
+        return self._currentCase
+
+    @currentCase.setter
+    def currentCase(self, c: CaseModel):
+        assert isinstance(c, CaseModel), "{} not instance of 'CaseModel'".format(c)
+        self._currentCase = c
+
+    @property
+    def unsavedAppendedAnotations(self) -> List[AnotationView]:
+        return self._unsavedAppendedAnotations
+
+    @property
+    def unsavedDeletedAnotations(self) -> List[AnotationView]:
+        return self._unsavedDeletedAnotations
 
 
     @property
@@ -781,12 +802,18 @@ class MainWindow(QMainWindow, WindowMixin):
         self.actions.shapeLineColor.setEnabled(selected)
         self.actions.shapeFillColor.setEnabled(selected)
 
-    def addLabel(self, shape):
+    def createNewShape(self, shape: AnotationView):
+        self.unsavedAppendedAnotations.append(shape)
+        self.addLabel(shape)
+
+
+    def addLabel(self, shape: AnotationView):
         shape.paintLabel = self.displayLabelOption.isChecked()
         item = HashableQListWidgetItem(shape.model.label)
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(Qt.Checked)
         item.setBackground(generateColorByText(shape.model.label))
+
         self.itemsToShapes[item] = shape
         self.shapesToItems[shape] = item
         self.labelList.addItem(item)
@@ -802,6 +829,10 @@ class MainWindow(QMainWindow, WindowMixin):
         self.labelList.takeItem(self.labelList.row(item))
         del self.shapesToItems[shape]
         del self.itemsToShapes[item]
+        if shape in self.unsavedAppendedAnotations:
+            self.unsavedAppendedAnotations.remove(shape)
+        else:
+            self.unsavedDeletedAnotations.append(shape)
         self.updateComboBox()
 
     def updateComboBox(self):
@@ -817,23 +848,38 @@ class MainWindow(QMainWindow, WindowMixin):
         self.comboBox.update_items(uniqueTextList)
 
     def saveLabels(self, annotationFilePath):
-        cimgPath = self.currentImageDataItem.path
-        if not (cimgPath in self.imagePathToAnotationPath.keys()):
-            self.imagePathToAnotationPath[cimgPath] = annotationFilePath
 
-        anotationsFileModel = AnotationsFileModel(
-            anotations=[anotView.model for anotView in self.shapesToItems.keys()],
-            isVerified=self.canvas.verified,
-            imageFilePath=cimgPath)
+        for av in self.unsavedDeletedAnotations:
+            anotatedImage = self.currentCase.getAnotatedImage(self.currentImageDataItem.localPath)
+            if anotatedImage is not None:
+                if av.model in anotatedImage.anotations:
+                    anotatedImage.anotations.remove(av.model)
+        
+        print('unsavedAppendedAnotations: ', self.unsavedAppendedAnotations)
+        try:
+            print('self.currentCase', self.currentCase.anotatedImages[0].anotations)
+        except:
+            pass
+        for av in self.unsavedAppendedAnotations:
+            self.currentCase.addAnotation(
+                imagePath=self.currentImageDataItem.localPath,
+                imageId=self.currentImageDataItem.extra['id'],
+                anotationModel=av.model)
 
-        anotationsFileModel.write(
-            outputPathWithoutExtention=os.path.splitext(annotationFilePath)[0],
-            writer=self.anotationWriter,
-            imageDataItem=self.currentImageDataItem
+        if self.anotatedCaseRepository.getCase(self.currentCase.name) is None:
+            self.anotatedCaseRepository.addCase(self.currentCase)
+
+        self.currentCase.write(
+            outputPathWithoutExtention = os.path.splitext(annotationFilePath)[0],
+            writer=self.anotationWriter
         )
+        self._unsavedAppendedAnotations = []
+        self._unsavedDeletedAnotations = []
 
     def copySelectedShape(self):
-        self.addLabel(self.canvas.copySelectedShape())
+        shape = self.canvas.copySelectedShape()
+
+        self.createNewShape(shape)
         # fix copy and delete
         self.shapeSelectionChanged(True)
 
@@ -893,7 +939,8 @@ class MainWindow(QMainWindow, WindowMixin):
             generate_color = generateColorByText(text)
             shape = self.canvas.setLastLabel(
                 text, generate_color, generate_color)
-            self.addLabel(shape)
+
+            self.createNewShape(shape)
             if self.beginner():  # Switch to edit mode.
                 self.canvas.setEditing(True)
                 self.actions.create.setEnabled(True)
@@ -995,15 +1042,6 @@ class MainWindow(QMainWindow, WindowMixin):
             return
         item.setSelected(True)
 
-    def setDefaultAnotationSaveFolderAndPath(self):
-        imgPath = self.currentImageDataItem.path
-        if imgPath in self.imagePathToAnotationPath.keys():
-            self.defaultAnotationSavePath = self.imagePathToAnotationPath[imgPath]
-            self.defaultAnotationSaveFolder = os.path.dirname(
-                self.defaultAnotationSavePath)
-        else:
-            self.defaultAnotationSavePath = None
-            self.defaultAnotationSaveFolder = os.path.dirname(imgPath)
 
     def loadImageAndAnotationOnCanvas(self, imagePreview: ImagePreviewItem = None):
         self.resetState()
@@ -1012,15 +1050,8 @@ class MainWindow(QMainWindow, WindowMixin):
         else:
             self.currentIndex = imagePreview.indx
             self.loadImageOnCanvas(self.currentImageDataItem)
-            
-        self.setDefaultAnotationSaveFolderAndPath()
-        anotPath = None
-        if self.currentImageDataItem.localPath in self.imagePathToAnotationPath.keys():
-            anotPath = self.imagePathToAnotationPath[self.currentImageDataItem.localPath]
-        elif self.currentImageDataItem.path in self.imagePathToAnotationPath.keys():
-            anotPath = self.imagePathToAnotationPath[self.currentImageDataItem.path]
-        if anotPath is not None:
-            self.loadAnotationsOnCanvas(anotPath)
+
+        self.loadAnotationsOnCanvas()
 
 
 
@@ -1037,16 +1068,32 @@ class MainWindow(QMainWindow, WindowMixin):
         self.adjustScale(initial=True)
         self.status("Loaded %s" % imageDataItem.name)
         self.toggleActions(True)
+        self.loadImageCase()
 
-    def loadAnotationsOnCanvas(self, anotationFilePath):
-        anotFileModel = AnotationsFileModel.read(
-            reader=self.anotationReader,
-            anotationsFilePath=os.path.abspath(ustr(anotationFilePath)))
-        
-        self.canvas.verified = anotFileModel.isVerified
+    def loadImageCase(self):
+        caseName = self.currentImageDataItem.localPath.split(os.path.sep)[1]
+        if self.currentCase is None or not (caseName == self.currentCase.name):
+            case = self.anotatedCaseRepository.getCase(caseName)
+            if case is None:
+                self.currentCase = CaseModel(
+                    name=self.currentImageDataItem.localPath.split(
+                        os.path.sep)[1] # set current case
+                )
+                # no anotation yet, so doesn`t add to anotatedCaseRepository
+            else:
+                self.currentCase = case
+
+    def loadAnotationsOnCanvas(self):
+        anotatedImage = self.currentCase.getAnotatedImage(self.currentImageDataItem.localPath)
+        if anotatedImage is None:
+            self.canvas.setEnabled(True)
+            self.toggleActions(True)
+            return
+
+        self.canvas.verified = anotatedImage.isVerified
 
         views = []
-        for am in anotFileModel.anotations:
+        for am in anotatedImage.anotations:
             av = AnotationView()
             av.setModel(am)
             av.shapeView.close()
@@ -1183,43 +1230,46 @@ class MainWindow(QMainWindow, WindowMixin):
         """
         anotationsFilesPath = self.anotationCollector.collect(folderPath)
         for path in anotationsFilesPath:
-            afm = AnotationsFileModel.read(
+            case = CaseModel.read(
                 anotationsFilePath=path, reader=self.anotationReader)
-            self.imagePathToAnotationPath[afm.imageFilePath] = path
+            self.anotatedCaseRepository.addCase(case)
 
 
     def markAnotatedGroupsAndImages(self):
-        for anotPath in self.imagePathToAnotationPath.values():
-            am =  AnotationsFileModel.read(
-                    anotPath,
-                    self.anotationReader
-                )
-            self.markAnotatedGroup(am)
-            self.markAnotatedImage(am)
+        # for anotPath in self.imagePathToAnotationPath.values():
+        #     am =  AnotationsFileModel.read(
+        #             anotPath,
+        #             self.anotationReader
+        #         )
+        #     self.markAnotatedGroup(am)
+        #     self.markAnotatedImage(am)
+        pass
     
     def markAnotatedImages(self):
-        for anotPath in self.imagePathToAnotationPath.values():
-            am =  AnotationsFileModel.read(
-                    anotPath,
-                    self.anotationReader
-                )
-            self.markAnotatedImage(am)
+        # for anotPath in self.imagePathToAnotationPath.values():
+        #     am =  AnotationsFileModel.read(
+        #             anotPath,
+        #             self.anotationReader
+        #         )
+        #     self.markAnotatedImage(am)
+        pass
 
-    def markAnotatedGroup(self, anotationFileModel: AnotationsFileModel):
-        for imagePreview in self.explorer.IdlistView.items:
-            if anotationFileModel.imageId == imagePreview.data.extra['id'] and\
-                (baseDir(anotationFileModel.imageFilePath) == baseDir(imagePreview.data.localPath) or\
-                 baseDir(anotationFileModel.imageFilePath) == baseDir(imagePreview.data.path)):
-                imagePreview.markAsAnotated()
-                break
+    def markAnotatedGroup(self, anotationFileModel): #: AnotationsFileModel):
+        # for imagePreview in self.explorer.IdlistView.items:
+        #     if anotationFileModel.imageId == imagePreview.data.extra['id'] and\
+        #         (baseDir(anotationFileModel.imageFilePath) == baseDir(imagePreview.data.localPath) or\
+        #          baseDir(anotationFileModel.imageFilePath) == baseDir(imagePreview.data.path)):
+        #         imagePreview.markAsAnotated()
+        #         break
+        pass
 
-    def markAnotatedImage(self, anotationFileModel: AnotationsFileModel):
-        for imagePreview in self.explorer.listView.items:
-            if anotationFileModel.imageFilePath == imagePreview.data.localPath or\
-                    anotationFileModel.imageFilePath == imagePreview.data.path:
-                imagePreview.markAsAnotated()
-                break
-
+    def markAnotatedImage(self, anotationFileModel): #: AnotationsFileModel):
+        # for imagePreview in self.explorer.listView.items:
+        #     if anotationFileModel.imageFilePath == imagePreview.data.localPath or\
+        #             anotationFileModel.imageFilePath == imagePreview.data.path:
+        #         imagePreview.markAsAnotated()
+        #         break
+        pass
 
     def verifyImg(self, _value=False):
         # Proceding next image without dialog if having any label
@@ -1301,10 +1351,8 @@ class MainWindow(QMainWindow, WindowMixin):
         dlg = QFileDialog(self, caption, openDialogFolder, filters)
         dlg.setDefaultSuffix(self.anotationWriter.suffix)
         dlg.setAcceptMode(QFileDialog.AcceptSave)
-        filenameWithoutExtension = os.path.splitext(
-            self.currentImageDataItem.path)[0]
-
-        dlg.selectFile(filenameWithoutExtension)
+        filenameWithoutExtension = os.path.join(self.currentImageDataItem.root, self.currentCase.name)
+        dlg.selectFile(filenameWithoutExtension + '.' + self.anotationWriter.suffix)
         dlg.setOption(QFileDialog.DontUseNativeDialog, False)
         if dlg.exec_():
             fullFilePath = ustr(dlg.selectedFiles()[0])
@@ -1322,12 +1370,12 @@ class MainWindow(QMainWindow, WindowMixin):
             self.statusBar().showMessage('Saved to  %s' % annotationFilePath)
             self.statusBar().show()
             
-            am = AnotationsFileModel().read(
-                annotationFilePath,
-                self.anotationReader
-            )
-            self.markAnotatedImage(am)
-            self.markAnotatedGroup(am)
+            # am = AnotationsFileModel().read(
+            #     annotationFilePath,
+            #     self.anotationReader
+            # )
+            # self.markAnotatedImage(am)
+            # self.markAnotatedGroup(am)
 
     def closeFile(self, _value=False):
         if not self.mayContinue():
@@ -1409,7 +1457,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def copyShape(self):
         self.canvas.endMove(copy=True)
-        self.addLabel(self.canvas.selectedShape)
+        self.createNewShape(self.canvas.selectedShape)
         self.setDirty()
 
     def moveShape(self):
