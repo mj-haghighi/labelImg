@@ -585,7 +585,6 @@ class MainWindow(QMainWindow, WindowMixin):
             if len(self.imageDataRepository.idToItems.keys()) > 0:
                 self.currentId = list(
                     self.imageDataRepository.idToItems.keys())[0]
-                print('self.currentId set to: ', self.currentId)
             else:
                 return None
         return self.imageDataRepository.idToItems[self.currentId][self.currentIndex]
@@ -854,12 +853,6 @@ class MainWindow(QMainWindow, WindowMixin):
             if anotatedImage is not None:
                 if av.model in anotatedImage.anotations:
                     anotatedImage.anotations.remove(av.model)
-        
-        print('unsavedAppendedAnotations: ', self.unsavedAppendedAnotations)
-        try:
-            print('self.currentCase', self.currentCase.anotatedImages[0].anotations)
-        except:
-            pass
         for av in self.unsavedAppendedAnotations:
             self.currentCase.addAnotation(
                 imagePath=self.currentImageDataItem.localPath,
@@ -1071,13 +1064,12 @@ class MainWindow(QMainWindow, WindowMixin):
         self.loadImageCase()
 
     def loadImageCase(self):
-        caseName = self.currentImageDataItem.localPath.split(os.path.sep)[1]
+        caseName = re.split(r'\\|/', self.currentImageDataItem.localPath)[1]
         if self.currentCase is None or not (caseName == self.currentCase.name):
             case = self.anotatedCaseRepository.getCase(caseName)
             if case is None:
                 self.currentCase = CaseModel(
-                    name=self.currentImageDataItem.localPath.split(
-                        os.path.sep)[1] # set current case
+                    name=caseName # set current case
                 )
                 # no anotation yet, so doesn`t add to anotatedCaseRepository
             else:
@@ -1347,7 +1339,7 @@ class MainWindow(QMainWindow, WindowMixin):
     def saveFileDialog(self, removeExt=True):
         caption = '%s - Choose File' % __appname__
         filters = 'File (*%s)' % self.anotationWriter.suffix
-        openDialogFolder = self.defaultAnotationSaveFolder
+        openDialogFolder = os.path.join(self.currentImageDataItem.root, self.currentCase.name)
         dlg = QFileDialog(self, caption, openDialogFolder, filters)
         dlg.setDefaultSuffix(self.anotationWriter.suffix)
         dlg.setAcceptMode(QFileDialog.AcceptSave)
