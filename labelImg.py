@@ -475,7 +475,6 @@ class MainWindow(QMainWindow, WindowMixin):
         self.anotationReader = JsonAnotationReader()
         self.anotationWriter = JsonAnotationWriter()
         self.defaultAnotationSavePath = None
-        self.defaultAnotationSaveFolder = None
 
         
         # Add Chris
@@ -585,6 +584,7 @@ class MainWindow(QMainWindow, WindowMixin):
         if not self.mayContinue():
             return
         self._currentCase = c
+        self.defaultAnotationSavePath = None
 
     @property
     def unsavedAppendedAnotations(self) -> List[AnotationView]:
@@ -1345,7 +1345,9 @@ class MainWindow(QMainWindow, WindowMixin):
 
 
     def saveFile(self, _value=False):
-        self._saveFile(self.saveFileDialog(removeExt=False))
+        if self.defaultAnotationSavePath is None:
+            self.defaultAnotationSavePath = self.saveFileDialog(removeExt=False)
+        self._saveFile(self.defaultAnotationSavePath)
 
     def saveFileAs(self, _value=False):
         assert not self.currentImageDataItem.qImage.isNull(), "cannot save empty image"
@@ -1368,7 +1370,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 return os.path.splitext(fullFilePath)[0]
             else:
                 return fullFilePath
-        return ''
+        return None
 
     def _saveFile(self, annotationFilePath):
         if annotationFilePath:
@@ -1376,11 +1378,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.setClean()
             self.statusBar().showMessage('Saved to  %s' % annotationFilePath)
             self.statusBar().show()
-            
-            # am = AnotationsFileModel().read(
-            #     annotationFilePath,
-            #     self.anotationReader
-            # )
+
             self.markAnotatedImage(self.currentCase.getAnotatedImage(self.currentImageDataItem.localPath))
             self.markAnotatedGroup(self.currentCase.getAnotatedImage(self.currentImageDataItem.localPath))
 
