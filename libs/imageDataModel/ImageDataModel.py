@@ -8,8 +8,8 @@ class ImageDataModel:
         self.name = name
         self.extra = {}
         self.qImage = None
-        self._root = root
-        self._path = path
+        self._root = root.replace('\\', '/') # prevent bug in windows style path
+        self._path = path.replace('\\', '/') # prevent bug in windows style path
         self._displayText = None
         self._dataCollectors = [PngJpegDataCollector(), DICOMDataCollector()]
         self._collectExtraData()

@@ -111,4 +111,4 @@ def baseDir(path: str):
     """ Return file`s dir
     """
     s = re.split(r'\\|/', path)[:-1]
-    return os.sep.join(s)
+    return '/'.join(s)
