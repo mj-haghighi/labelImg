@@ -1411,6 +1411,8 @@ class MainWindow(QMainWindow, WindowMixin):
         else:
             discardChanges = self.discardChangesDialog()
             if discardChanges == QMessageBox.No:
+                self._unsavedAppendedAnotations = []
+                self._unsavedDeletedAnotations = []
                 return True
             elif discardChanges == QMessageBox.Yes:
                 self.saveFile()
