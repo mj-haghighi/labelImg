@@ -59,6 +59,7 @@ from libs.repositories import ImageDataRepository, AnotatedImagesRepository, Cas
 from libs.caseModel import CaseModel
 from libs.imageViewItem import ImagePreviewItem
 from libs.utils import baseDir
+from libs.anotatedImageModel import AnotatedImageModel
 __appname__ = 'labelImg'
 
 
@@ -193,7 +194,7 @@ class MainWindow(QMainWindow, WindowMixin):
             parent=self,
             onImageItemClick=lambda imagePreview: self.loadImageAndAnotationOnCanvas(
                 imagePreview) if self.mayContinue() else None,
-            onFolderDoubleClicked  = lambda argv : self.markAnotatedGroupsAndImages(),
+            onFolderDoubleClicked  = lambda argv : self.setCurrentCaseByFolderOpened(*argv) or self.markAnotatedGroupsAndImages(),
             onIDPreviewClick =  lambda imagePreview : self.markAnotatedImages() or self.setCurrentId(imagePreview.data.extra['id'])
         )
 
@@ -455,6 +456,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.anotatedCaseRepository = CaseRepository()
         self._unsavedAppendedAnotations = []
         self._unsavedDeletedAnotations = []
+        self._currentImageDataItem = None
         self._currentCase = None
         self._currentId = None
         self._currentIndex = 0
@@ -543,12 +545,21 @@ class MainWindow(QMainWindow, WindowMixin):
 
     @property
     def currentId(self):
+        if self._currentId is None:
+            if len(self.imageDataRepository.idToItems.keys()) > 0:
+                self.currentId = list(
+                    self.imageDataRepository.idToItems.keys())[0]
+            else:
+                return 0
+
         return self._currentId
     
     @currentId.setter
     def currentId(self, _id: int):
+        if not self.mayContinue():
+            return
         self._currentId = _id
-        self.currentIndex = -1
+        self._currentIndex = -1
     
     def setCurrentId(self, _id):
         self.currentId = _id 
@@ -559,7 +570,10 @@ class MainWindow(QMainWindow, WindowMixin):
     
     @currentIndex.setter
     def currentIndex(self, indx: int):
+        if not self.mayContinue():
+            return
         self._currentIndex = indx
+        self.currentImageDataItem = self.imageDataRepository.idToItems[self.currentId][self.currentIndex]
 
     @property
     def currentCase(self) -> CaseModel:
@@ -568,6 +582,8 @@ class MainWindow(QMainWindow, WindowMixin):
     @currentCase.setter
     def currentCase(self, c: CaseModel):
         assert isinstance(c, CaseModel), "{} not instance of 'CaseModel'".format(c)
+        if not self.mayContinue():
+            return
         self._currentCase = c
 
     @property
@@ -581,13 +597,20 @@ class MainWindow(QMainWindow, WindowMixin):
 
     @property
     def currentImageDataItem(self) -> ImageDataModel:
-        if self.currentId is None:
-            if len(self.imageDataRepository.idToItems.keys()) > 0:
-                self.currentId = list(
-                    self.imageDataRepository.idToItems.keys())[0]
-            else:
-                return None
-        return self.imageDataRepository.idToItems[self.currentId][self.currentIndex]
+        if self._currentImageDataItem is not None:
+            return self._currentImageDataItem
+        
+        if self.currentId not in self.imageDataRepository.idToItems.keys():
+            return  None
+        
+        self._currentImageDataItem = self.imageDataRepository.idToItems[self.currentId][self.currentIndex] 
+        return self._currentImageDataItem
+
+    @currentImageDataItem.setter
+    def currentImageDataItem(self, cidm: ImageDataModel):
+        if not self.mayContinue():
+            return
+        self._currentImageDataItem = cidm
         
     @property
     def imagePathToAnotationPath(self) -> Dict[str, str]:
@@ -1038,12 +1061,10 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def loadImageAndAnotationOnCanvas(self, imagePreview: ImagePreviewItem = None):
         self.resetState()
-        if imagePreview is None:
-            self.loadImageOnCanvas(self.currentImageDataItem)
-        else:
+        if imagePreview is not None:
             self.currentIndex = imagePreview.indx
-            self.loadImageOnCanvas(self.currentImageDataItem)
-
+        self.loadImageOnCanvas(self.currentImageDataItem)
+        self.setCurrentCaseByCurrentImage()
         self.loadAnotationsOnCanvas()
 
 
@@ -1061,16 +1082,23 @@ class MainWindow(QMainWindow, WindowMixin):
         self.adjustScale(initial=True)
         self.status("Loaded %s" % imageDataItem.name)
         self.toggleActions(True)
-        self.loadImageCase()
 
-    def loadImageCase(self):
+    def setCurrentCaseByFolderOpened(self, folderName, _):
+        case = self.anotatedCaseRepository.getCase(name=folderName)
+        if case is None:
+            return
+        self.currentCase = case
+
+    def setCurrentCaseByCurrentImage(self):
         caseName = re.split(r'\\|/', self.currentImageDataItem.localPath)[1]
+        self.setCurrentCase(caseName)
+
+    def setCurrentCase(self, caseName: str):
         if self.currentCase is None or not (caseName == self.currentCase.name):
             case = self.anotatedCaseRepository.getCase(caseName)
             if case is None:
                 self.currentCase = CaseModel(
-                    name=caseName # set current case
-                )
+                    name=caseName)  # set current case
                 # no anotation yet, so doesn`t add to anotatedCaseRepository
             else:
                 self.currentCase = case
@@ -1226,42 +1254,32 @@ class MainWindow(QMainWindow, WindowMixin):
                 anotationsFilePath=path, reader=self.anotationReader)
             self.anotatedCaseRepository.addCase(case)
 
-
     def markAnotatedGroupsAndImages(self):
-        # for anotPath in self.imagePathToAnotationPath.values():
-        #     am =  AnotationsFileModel.read(
-        #             anotPath,
-        #             self.anotationReader
-        #         )
-        #     self.markAnotatedGroup(am)
-        #     self.markAnotatedImage(am)
-        pass
+        if self.currentCase is None:
+            return
+        for anotatedImage in self.currentCase.anotatedImages:
+            self.markAnotatedGroup(anotatedImage)
+            self.markAnotatedImage(anotatedImage)
+        
     
     def markAnotatedImages(self):
-        # for anotPath in self.imagePathToAnotationPath.values():
-        #     am =  AnotationsFileModel.read(
-        #             anotPath,
-        #             self.anotationReader
-        #         )
-        #     self.markAnotatedImage(am)
-        pass
+        if self.currentCase is None:
+            return
+        for anotatedImage in self.currentCase.anotatedImages:
+            self.markAnotatedImage(anotatedImage)
 
-    def markAnotatedGroup(self, anotationFileModel): #: AnotationsFileModel):
-        # for imagePreview in self.explorer.IdlistView.items:
-        #     if anotationFileModel.imageId == imagePreview.data.extra['id'] and\
-        #         (baseDir(anotationFileModel.imageFilePath) == baseDir(imagePreview.data.localPath) or\
-        #          baseDir(anotationFileModel.imageFilePath) == baseDir(imagePreview.data.path)):
-        #         imagePreview.markAsAnotated()
-        #         break
-        pass
+    def markAnotatedGroup(self, anotatedImage: AnotatedImageModel):
+        for imagePreview in self.explorer.IdlistView.items:
+            if anotatedImage is not None and anotatedImage.imageId == imagePreview.data.extra['id'] and\
+                    baseDir(anotatedImage.imagePath) == baseDir(imagePreview.data.localPath):
+                imagePreview.markAsAnotated()
+                break
 
-    def markAnotatedImage(self, anotationFileModel): #: AnotationsFileModel):
-        # for imagePreview in self.explorer.listView.items:
-        #     if anotationFileModel.imageFilePath == imagePreview.data.localPath or\
-        #             anotationFileModel.imageFilePath == imagePreview.data.path:
-        #         imagePreview.markAsAnotated()
-        #         break
-        pass
+    def markAnotatedImage(self, anotatedImage: AnotatedImageModel):
+        for imagePreview in self.explorer.listView.items:
+            if anotatedImage is not None and anotatedImage.imagePath == imagePreview.data.localPath:
+                imagePreview.markAsAnotated()
+                break
 
     def verifyImg(self, _value=False):
         # Proceding next image without dialog if having any label
@@ -1327,10 +1345,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
 
     def saveFile(self, _value=False):
-        if self.defaultAnotationSavePath is not None:
-            self._saveFile(self.defaultAnotationSavePath)
-        else:
-            self._saveFile(self.saveFileDialog(removeExt=False))
+        self._saveFile(self.saveFileDialog(removeExt=False))
 
     def saveFileAs(self, _value=False):
         assert not self.currentImageDataItem.qImage.isNull(), "cannot save empty image"
@@ -1366,8 +1381,8 @@ class MainWindow(QMainWindow, WindowMixin):
             #     annotationFilePath,
             #     self.anotationReader
             # )
-            # self.markAnotatedImage(am)
-            # self.markAnotatedGroup(am)
+            self.markAnotatedImage(self.currentCase.getAnotatedImage(self.currentImageDataItem.localPath))
+            self.markAnotatedGroup(self.currentCase.getAnotatedImage(self.currentImageDataItem.localPath))
 
     def closeFile(self, _value=False):
         if not self.mayContinue():
