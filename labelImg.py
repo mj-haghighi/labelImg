@@ -870,12 +870,12 @@ class MainWindow(QMainWindow, WindowMixin):
         self.comboBox.update_items(uniqueTextList)
 
     def saveLabels(self, annotationFilePath):
-
         for av in self.unsavedDeletedAnotations:
             anotatedImage = self.currentCase.getAnotatedImage(self.currentImageDataItem.localPath)
             if anotatedImage is not None:
                 if av.model in anotatedImage.anotations:
                     anotatedImage.anotations.remove(av.model)
+
         for av in self.unsavedAppendedAnotations:
             self.currentCase.addAnotation(
                 imagePath=self.currentImageDataItem.localPath,
@@ -1260,8 +1260,15 @@ class MainWindow(QMainWindow, WindowMixin):
         for anotatedImage in self.currentCase.anotatedImages:
             self.markAnotatedGroup(anotatedImage)
             self.markAnotatedImage(anotatedImage)
-        
     
+    def unmarkAllGroups(self):
+        for imagePreview in self.explorer.IdlistView.items:
+            imagePreview.unmark()
+
+    def unmarkAllimages(self):
+        for imagePreview in self.explorer.listView.items:
+            imagePreview.unmark()
+
     def markAnotatedImages(self):
         if self.currentCase is None:
             return
@@ -1273,7 +1280,7 @@ class MainWindow(QMainWindow, WindowMixin):
             if anotatedImage is not None and anotatedImage.imageId == imagePreview.data.extra['id'] and\
                     baseDir(anotatedImage.imagePath) == baseDir(imagePreview.data.localPath):
                 imagePreview.markAsAnotated()
-                break
+                break    
 
     def markAnotatedImage(self, anotatedImage: AnotatedImageModel):
         for imagePreview in self.explorer.listView.items:
@@ -1379,8 +1386,9 @@ class MainWindow(QMainWindow, WindowMixin):
             self.statusBar().showMessage('Saved to  %s' % annotationFilePath)
             self.statusBar().show()
 
-            self.markAnotatedImage(self.currentCase.getAnotatedImage(self.currentImageDataItem.localPath))
-            self.markAnotatedGroup(self.currentCase.getAnotatedImage(self.currentImageDataItem.localPath))
+            self.unmarkAllGroups()
+            self.unmarkAllimages()
+            self.markAnotatedGroupsAndImages()
 
     def closeFile(self, _value=False):
         if not self.mayContinue():
