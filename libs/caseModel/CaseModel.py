@@ -15,6 +15,12 @@ class CaseModel:
 
     @property
     def anotatedImages(self) -> List[AnotatedImageModel]:
+        emptyImgsPath = []
+        for ai in self.imagePathToAnotatedImage.values():
+            if not ai.anotations:
+                emptyImgsPath.append(ai.imagePath)
+        for p in emptyImgsPath:
+            del self._imagePathToAnotatedImage[p]
         return self._imagePathToAnotatedImage.values()
 
     @property
@@ -73,8 +79,6 @@ class CaseModel:
                 outputPathWithoutExtention: path of anotation file,
                 writer: writer module
         """
-        if not self.anotatedImages:
-            return
         
         dataDict = {
             'name': self.name,
