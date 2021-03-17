@@ -49,7 +49,7 @@ from libs.create_ml_io import CreateMLReader
 from libs.create_ml_io import JSON_EXT
 from libs.ustr import ustr
 from libs.hashableQListWidgetItem import HashableQListWidgetItem
-from libs.explorer import ExplorerDoc
+from libs.explorer import ExplorerView
 from libs.imageDataModel import ImageDataModel 
 from libs.anotationCollector import JsonAnotationCollector
 from libs.anotationReadersWriters import JsonAnotationReader, JsonAnotationWriter
@@ -190,7 +190,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.canvas.drawingPolygon.connect(self.toggleDrawingSensitive)
 
         # Create explorer
-        self.explorer = ExplorerDoc(
+        self.explorer = ExplorerView(
             parent=self,
             onImageItemClick=lambda imagePreview: self.loadImageAndAnotationOnCanvas(
                 imagePreview) if self.mayContinue() else None,
