@@ -25,6 +25,17 @@ class ImagePreviewItem(QWidget):
             """
         )
 
+    def unmark(self):
+        """ Unmark as unannotated
+        """
+        self.setStyleSheet(
+            """
+            QWidget {
+            background-color: rgb(255, 255, 255);
+            }
+            """
+        )
+
     @property
     def data(self)-> ImageDataModel:
         return self._data
