@@ -60,7 +60,7 @@ from libs.caseModel import CaseModel
 from libs.imageViewItem import ImagePreviewItem
 from libs.utils import baseDir
 from libs.anotatedImageModel import AnotatedImageModel
-__appname__ = 'labelImg'
+__appname__ = 'AnnotateCT3D'
 
 
 class WindowMixin(object):
