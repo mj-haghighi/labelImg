@@ -44,7 +44,7 @@ class ExplorerView(QDockWidget):
         self.imageDataRepository = ImageDataRepository()
         self.scanner = ImageDirectoryScanner()
         self._root = None
-
+        self.__currentCaseName = ''
     @property
     def root(self):
         return self._root
@@ -81,6 +81,9 @@ class ExplorerView(QDockWidget):
             idModel = self.imageDataRepository.idToItems[key][0].copy()
             l.append(idModel)
         self.IdlistView.loadContent(l)
+        if l:
+            self.__currentCaseName = l[0].localPath.split('/')[1].upper()
+            self.IdlistView.setStatusText("Case [{}]".format(self.__currentCaseName))
 
     def loadImagePreviewListContent(self, _id):
         self.listView.loadContent(
@@ -90,7 +93,7 @@ class ExplorerView(QDockWidget):
     def loadRelatedImageDataItems(self, widget: ImagePreviewItem):
         _id = widget.data.extra['id']
         self.loadImagePreviewListContent(_id)
-        self.listView.setStatusText("Images with id: [{}]".format(_id))
+        self.listView.setStatusText("Case [{}], ID [{}]".format(self.__currentCaseName, _id))
 
     def onTreeViewDoubleClicked(self, folderName, folderPath):
         if os.path.isfile(folderPath):
