@@ -124,7 +124,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         listLayout = QVBoxLayout()
         listLayout.setContentsMargins(0, 0, 0, 0)
-
+        self.dialogOpened = False
         # Create a widget for using default label
         self.useDefaultLabelCheckbox = QCheckBox(getStr('useDefaultLabel'))
         self.useDefaultLabelCheckbox.setChecked(False)
@@ -195,7 +195,8 @@ class MainWindow(QMainWindow, WindowMixin):
             onImageItemClick=lambda imagePreview: self.loadImageAndAnotationOnCanvas(
                 imagePreview) if self.mayContinue() else None,
             onFolderDoubleClicked  = lambda argv : self.setCurrentCaseByFolderOpened(*argv) or self.markAnotatedGroupsAndImages(),
-            onIDPreviewClick =  lambda imagePreview : self.markAnotatedImages() or self.setCurrentId(imagePreview.data.extra['id'])
+            onIDPreviewClick =  lambda imagePreview : self.markAnotatedImages() or self.setCurrentId(imagePreview.data.extra['id']),
+            onImagePreviewScroll=self.onScroll
         )
 
         self.setCentralWidget(scroll)
@@ -1067,7 +1068,17 @@ class MainWindow(QMainWindow, WindowMixin):
         self.setCurrentCaseByCurrentImage()
         self.loadAnotationsOnCanvas()
 
+    def onScroll(self, goDown):
+        if self.dialogOpened:
+            return
 
+        if not self.mayContinue():
+            return
+
+        if goDown:
+            self.openPrevImg()
+        else:
+            self.openNextImg()
 
     def loadImageOnCanvas(self, imageDataItem: ImageDataModel):
         """ loadImageOnCanvas
@@ -1414,18 +1425,23 @@ class MainWindow(QMainWindow, WindowMixin):
         proc.startDetached(os.path.abspath(__file__))
 
     def mayContinue(self):
+        self.dialogOpened = True
         if not self.dirty:
+            self.dialogOpened = False
             return True
         else:
             discardChanges = self.discardChangesDialog()
             if discardChanges == QMessageBox.No:
                 self._unsavedAppendedAnotations = []
                 self._unsavedDeletedAnotations = []
+                self.dialogOpened = False
                 return True
             elif discardChanges == QMessageBox.Yes:
                 self.saveFile()
+                self.dialogOpened = False
                 return True
             else:
+                self.dialogOpened = False
                 return False
 
     def discardChangesDialog(self):
