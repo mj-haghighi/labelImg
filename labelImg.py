@@ -188,15 +188,14 @@ class MainWindow(QMainWindow, WindowMixin):
         self.canvas.shapeMoved.connect(self.setDirty)
         self.canvas.selectionChanged.connect(self.shapeSelectionChanged)
         self.canvas.drawingPolygon.connect(self.toggleDrawingSensitive)
-
+        self.scrollCount = 1
         # Create explorer
         self.explorer = ExplorerView(
             parent=self,
             onImageItemClick=lambda imagePreview: self.loadImageAndAnotationOnCanvas(
                 imagePreview) if self.mayContinue() else None,
             onFolderDoubleClicked  = lambda argv : self.setCurrentCaseByFolderOpened(*argv) or self.markAnotatedGroupsAndImages(),
-            onIDPreviewClick =  lambda imagePreview : self.markAnotatedImages() or self.setCurrentId(imagePreview.data.extra['id']),
-            onImagePreviewScroll=self.onScroll
+            onIDPreviewClick =  lambda imagePreview : self.markAnotatedImages() or self.setCurrentId(imagePreview.data.extra['id'])
         )
 
         self.setCentralWidget(scroll)
@@ -972,9 +971,12 @@ class MainWindow(QMainWindow, WindowMixin):
             self.canvas.resetAllLines()
 
     def scrollRequest(self, delta, orientation):
-        units = - delta / (8 * 15)
-        bar = self.scrollBars[orientation]
-        bar.setValue(bar.value() + bar.singleStep() * units)
+        if self.dirty:
+            units = - delta / (8 * 15)
+            bar = self.scrollBars[orientation]
+            bar.setValue(bar.value() + bar.singleStep() * units)
+        elif orientation == Qt.Vertical:
+            self.onScroll(delta < 0)
 
     def setZoom(self, value):
         self.actions.fitWidth.setChecked(False)
@@ -1074,6 +1076,11 @@ class MainWindow(QMainWindow, WindowMixin):
 
         if not self.mayContinue():
             return
+
+        if not self.scrollCount % 8 == 0:
+            self.scrollCount +=1
+            return
+        self.scrollCount = 1
 
         if goDown:
             self.openPrevImg()

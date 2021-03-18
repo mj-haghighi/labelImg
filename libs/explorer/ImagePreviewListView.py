@@ -25,7 +25,6 @@ class ImagePreviewListView(QWidget, AbstractExplorerViewMixin):
         self.__listView.itemClicked.connect(lambda item:onClicked(self._translateIndex(item)))
         self.__listView.itemDoubleClicked.connect(lambda item:onDoubleClicked(self._translateIndex(item)))
         self.__status = QLabel()
-        self.__scrollStep = 1
         self._configStyle()
         self._items = []
 
@@ -40,15 +39,6 @@ class ImagePreviewListView(QWidget, AbstractExplorerViewMixin):
         self.setLayout(layout)
         self.__listView.setFlow(QListView.LeftToRight)
         self.__listView.setWrapping(True)
-
-    def wheelEvent(self, event):
-        delta = event.angleDelta().y()
-        y = (delta and delta // abs(delta))
-        self.__scrollStep +=1
-        if not self.__scrollStep % 20 == 0:
-            return
-        self.__scrollStep = 1
-        self.__onScroll(y > 0)
 
     def item(self, indx):
         """ return item with index 'indx'
