@@ -27,6 +27,8 @@ class ExplorerView(QDockWidget):
         self.treeView = TreeView(
             parent=self,
             onDoubleClicked=lambda filename, filepath: self.onTreeViewDoubleClicked(
+                filename, filepath) or onFolderDoubleClicked((filename, filepath)),
+            onExpanded=lambda filename, filepath: self.onTreeViewDoubleClicked(
                 filename, filepath) or onFolderDoubleClicked((filename, filepath)))
         
         self.IdlistView = ImageIdPreviewListView(
