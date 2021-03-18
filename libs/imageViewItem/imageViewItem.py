@@ -42,7 +42,7 @@ class ImagePreviewItem(QWidget):
 
     def _organizeLayout(self):
         pixmap = QPixmap.fromImage(self.data.qImage)
-        pixmap = pixmap.scaledToHeight(200)
+        pixmap = pixmap.scaledToHeight(100)
         preview = QLabel()
         preview.setPixmap(pixmap)
         preview.setFixedSize(pixmap.size())
