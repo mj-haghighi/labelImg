@@ -1080,7 +1080,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.paintCanvas()
         self.canvas.setEnabled(True)
         self.adjustScale(initial=True)
-        self.status("Loaded %s" % imageDataItem.name)
+        self.status("Loaded %s" % imageDataItem.localPath, delay=500000)
         self.toggleActions(True)
 
     def setCurrentCaseByFolderOpened(self, folderName, _):
