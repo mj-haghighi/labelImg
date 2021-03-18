@@ -1079,6 +1079,19 @@ class MainWindow(QMainWindow, WindowMixin):
             self.openPrevImg()
         else:
             self.openNextImg()
+    
+    def keyPressEvent(self, event):
+        if self.dialogOpened:
+            return
+
+        if not self.mayContinue():
+            return
+
+        k = event.key()
+        if k == QtCore.Qt.Key_Left or k == QtCore.Qt.Key_Up:
+            self.openPrevImg()
+        elif k == QtCore.Qt.Key_Right or k == QtCore.Qt.Key_Down:
+            self.openNextImg()
 
     def loadImageOnCanvas(self, imageDataItem: ImageDataModel):
         """ loadImageOnCanvas
