@@ -20,7 +20,8 @@ class ExplorerView(QDockWidget):
         name='&Explorer',
         onImageItemClick: Callable[[ImagePreviewItem], None] = lambda argv: None,
         onIDPreviewClick: Callable[[ImagePreviewItem], None] = lambda argv: None,
-        onFolderDoubleClicked=lambda argv: None
+        onFolderDoubleClicked=lambda argv: None,
+        onImagePreviewScroll=lambda argv: None
     ):
         super().__init__()
         self.treeView = TreeView(
@@ -34,7 +35,9 @@ class ExplorerView(QDockWidget):
                 imageWidget) or onIDPreviewClick(imageWidget))
        
         self.listView = ImagePreviewListView(
-            parent=self, onClicked=lambda imageWidget: onImageItemClick(imageWidget))
+            parent=self,
+            onClicked=lambda imageWidget: onImageItemClick(imageWidget),
+            onScroll=onImagePreviewScroll)
 
         self.setParent(parent)
         self.setWindowTitle(name)
