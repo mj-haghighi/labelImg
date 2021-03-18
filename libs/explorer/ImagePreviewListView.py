@@ -44,8 +44,8 @@ class ImagePreviewListView(QWidget, AbstractExplorerViewMixin):
     def wheelEvent(self, event):
         delta = event.angleDelta().y()
         y = (delta and delta // abs(delta))
-        self.__scrollStep +=abs(delta)
-        if not self.__scrollStep % 30 == 0:
+        self.__scrollStep +=1
+        if not self.__scrollStep % 20 == 0:
             return
         self.__scrollStep = 1
         self.__onScroll(y > 0)
