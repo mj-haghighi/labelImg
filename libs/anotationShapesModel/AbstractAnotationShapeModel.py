@@ -32,7 +32,9 @@ class AbstractAnotationShapeModel:
     def fromDict(self, dict_):
         raise Exception("!!! this method is not implemented !!!")
     
-    
+    def copy(self) -> 'AbstractAnotationShapeModel':
+        raise Exception("!!! this method is not implemented !!!")
+
     def reachMaxPoints(self):
         if len(self.points) >= self.maxAllowedPoints:
             return True

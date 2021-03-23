@@ -15,6 +15,10 @@ class RectangleModel(AbstractAnotationShapeModel):
     def maxAllowedPoints(self):
         return 4
 
+    def copy(self) -> 'RectangleModel':
+        return RectangleModel(
+            points=[QPoint(p.x(), p.y()) for p in self.points])
+
     def toDict(self):
         """ Convert shape information to python dictionary
         """
