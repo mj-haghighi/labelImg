@@ -922,7 +922,7 @@ class MainWindow(QMainWindow, WindowMixin):
     def labelItemChanged(self, item):
         shape = self.itemsToShapes[item]
         label = item.text()
-        if label != shape.label:
+        if label != shape.model.label:
             shape.label = item.text()
             shape.line_color = generateColorByText(shape.label)
             self.setDirty()
