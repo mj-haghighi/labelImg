@@ -692,6 +692,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.shapesToItems.clear()
         self.labelList.clear()
         self.labelFile = None
+        self._unsavedAppendedAnotations = []
+        self._unsavedDeletedAnotations = []
         self.canvas.resetState()
         self.labelCoordinates.clear()
         self.comboBox.cb.clear()
@@ -1064,6 +1066,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def loadImageAndAnotationOnCanvas(self, imagePreview: ImagePreviewItem = None):
         self.resetState()
+        self.setClean()
         if imagePreview is not None:
             self.currentIndex = imagePreview.indx
         self.loadImageOnCanvas(self.currentImageDataItem)
@@ -1452,8 +1455,8 @@ class MainWindow(QMainWindow, WindowMixin):
         else:
             discardChanges = self.discardChangesDialog()
             if discardChanges == QMessageBox.No:
-                self._unsavedAppendedAnotations = []
-                self._unsavedDeletedAnotations = []
+                self.resetState()
+                self.setClean()
                 self.dialogOpened = False
                 return True
             elif discardChanges == QMessageBox.Yes:
