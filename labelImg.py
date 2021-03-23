@@ -192,11 +192,9 @@ class MainWindow(QMainWindow, WindowMixin):
         # Create explorer
         self.explorer = ExplorerView(
             parent=self,
-            onImageItemClick=lambda imagePreview: self.loadImageAndAnotationOnCanvas(
-                imagePreview) if self.mayContinue() else None,
-            onFolderDoubleClicked  = lambda argv : self.setCurrentCaseByFolderOpened(*argv) or self.markAnotatedGroupsAndImages(),
-            onIDPreviewClick =  lambda imagePreview : self.markAnotatedImages() or self.setCurrentId(imagePreview.data.extra['id'])
-        )
+            onImageItemClick=self.onImageItemClickFuncGroup,
+            onFolderDoubleClicked=self.onFolderDoubleClickedFuncGroup,
+            onIDPreviewClick=self.onIDPreviewClickFuncGroup)
 
         self.setCentralWidget(scroll)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dock)
@@ -615,6 +613,21 @@ class MainWindow(QMainWindow, WindowMixin):
     @property
     def imagePathToAnotationPath(self) -> Dict[str, str]:
         return self._imagePathToAnotationPath
+
+    def onImageItemClickFuncGroup(self, imagePreview: ImagePreviewItem):
+        if self.mayContinue():
+            self.loadImageAndAnotationOnCanvas(imagePreview)
+
+    def onFolderDoubleClickedFuncGroup(self, argv):
+        if self.mayContinue():
+            self.setCurrentCaseByFolderOpened(*argv)
+            self.markAnotatedGroupsAndImages()
+
+    def onIDPreviewClickFuncGroup(self, imagePreview: ImagePreviewItem):
+        if self.mayContinue():
+            self.markAnotatedImages()
+            self.setCurrentId(imagePreview.data.extra['id'])
+
 
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Control:
