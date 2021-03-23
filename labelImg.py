@@ -142,7 +142,6 @@ class MainWindow(QMainWindow, WindowMixin):
         self.diffcButton.stateChanged.connect(self.btnstate)
         self.editButton = QToolButton()
         self.editButton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-
         # Add some of widgets to listLayout
         listLayout.addWidget(self.editButton)
         listLayout.addWidget(self.diffcButton)
@@ -150,7 +149,11 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Create and add combobox for showing unique labels in group
         self.comboBox = ComboBox(self)
+        self.currentImageStatusBox = QLabel()
+        self.currentImageStatusBox.setText('')
         listLayout.addWidget(self.comboBox)
+        listLayout.addWidget(self.currentImageStatusBox)
+
 
         # Create and add a widget for showing current label items
         self.labelList = QListWidget()
@@ -614,13 +617,13 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def onFolderDoubleClickedFuncGroup(self, argv):
         if self.mayContinue():
-            self.canvas.resetState()
+            self.resetState()
             self.setCurrentCaseByFolderOpened(*argv)
             self.markAnotatedGroupsAndImages()
 
     def onIDPreviewClickFuncGroup(self, imagePreview: ImagePreviewItem):
         if self.mayContinue():
-            self.canvas.resetState()
+            self.resetState()
             self.markAnotatedImages()
             self.setCurrentId(imagePreview.data.extra['id'])
 
@@ -703,6 +706,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.canvas.resetState()
         self.labelCoordinates.clear()
         self.comboBox.cb.clear()
+        self.currentImageStatusBox.setText('')
 
     def currentItem(self):
         items = self.labelList.selectedItems()
@@ -878,7 +882,6 @@ class MainWindow(QMainWindow, WindowMixin):
         if anotatedImage is not None:
             anotatedImage.clearAnotations()
 
-        print(len(self.currentImageAnotationsView))
         for av in self.currentImageAnotationsView:
             self.currentCase.addAnotation(
                 imagePath=self.currentImageDataItem.localPath,
@@ -1109,6 +1112,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.canvas.verified = False
         self.setItemSelectedInExplorerPreview()
         self.canvas.loadPixmap(QPixmap.fromImage(imageDataItem.qImage))
+        self.currentImageStatusBox.setText(imageDataItem.localPath)
         self.setClean()
         self.paintCanvas()
         self.canvas.setEnabled(True)
