@@ -127,8 +127,9 @@ class MainWindow(QMainWindow, WindowMixin):
         self.dialogOpened = False
         # Create a widget for using default label
         self.useDefaultLabelCheckbox = QCheckBox(getStr('useDefaultLabel'))
-        self.useDefaultLabelCheckbox.setChecked(False)
+        self.useDefaultLabelCheckbox.setChecked(True)
         self.defaultLabelTextLine = QLineEdit()
+        self.defaultLabelTextLine.setText('...')
         useDefaultLabelQHBoxLayout = QHBoxLayout()
         useDefaultLabelQHBoxLayout.addWidget(self.useDefaultLabelCheckbox)
         useDefaultLabelQHBoxLayout.addWidget(self.defaultLabelTextLine)
