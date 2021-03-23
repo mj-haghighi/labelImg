@@ -10,6 +10,11 @@ class AnotationModel:
         self.label = label
         self.shape = shape
 
+    def copy(self):
+        return AnotationModel(
+            label=self.label,
+            shape=self.shape.copy())
+
     def toDict(self):
         """ Convert Anotation information to python dictionary
         """
