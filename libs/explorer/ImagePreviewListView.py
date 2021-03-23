@@ -26,11 +26,11 @@ class ImagePreviewListView(QWidget, AbstractExplorerViewMixin):
         self.__listView.itemDoubleClicked.connect(lambda item:onDoubleClicked(self._translateIndex(item)))
         self.__status = QLabel()
         self._configStyle()
-        self._items = []
+        self.__items = []
 
     @property
     def items(self) -> List[ImagePreviewItem]:
-        return self._items
+        return self.__items
 
     def _configStyle(self):
         layout = QVBoxLayout()
@@ -58,11 +58,13 @@ class ImagePreviewListView(QWidget, AbstractExplorerViewMixin):
     def setStatusText(self, text: str):
         self.__status.setText(text)
 
-    def _organizeLayout(self, imagesDataModel: List[ImageDataModel]):
+    def clear(self):
         self.__listView.clear()
         self.__status.setText('')
-        self._items = []
+        self.__items = []
 
+    def _organizeLayout(self, imagesDataModel: List[ImageDataModel]):
+        self.clear()
         for i, imageDataModel in enumerate(imagesDataModel):
             iw = self.itemWidgetComponent(imageDataModel, indx=i)
             self.items.append(iw)

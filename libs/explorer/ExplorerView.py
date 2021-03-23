@@ -103,7 +103,7 @@ class ExplorerView(QDockWidget):
     def onTreeViewDoubleClicked(self, folderName, folderPath):
         if os.path.isfile(folderPath):
             return
-        
+        self.listView.clear()
         self.imageDataRepository.clear()
         # self.listView.clear()
         # self.IdlistView.clear()
