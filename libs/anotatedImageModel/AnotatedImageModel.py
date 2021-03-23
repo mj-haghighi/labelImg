@@ -23,6 +23,9 @@ class AnotatedImageModel:
     def setVerfication(self, isVerified):
         self._isVerified = isVerified
 
+    def clearAnotations(self):
+        self._anotations = []
+
     @property
     def imageId(self):
         return self._imageId
