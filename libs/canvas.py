@@ -122,6 +122,8 @@ class Canvas(QWidget):
 
     def mouseMoveEvent(self, ev):
         """Update line with last point and current coordinates."""
+        if self.pixmap is None:
+            return
         pos = self.transformPos(ev.pos())
 
         # Update coordinates in status bar if image is opened
@@ -247,6 +249,8 @@ class Canvas(QWidget):
             self.overrideCursor(CURSOR_DEFAULT)
 
     def mousePressEvent(self, ev):
+        if self.pixmap is None:
+            return
         pos = self.transformPos(ev.pos())
 
         if ev.button() == Qt.LeftButton:
@@ -267,6 +271,8 @@ class Canvas(QWidget):
         self.update()
 
     def mouseReleaseEvent(self, ev):
+        if self.pixmap is None:
+            return
         if ev.button() == Qt.RightButton:
             menu = self.menus[bool(self.selectedShapeCopy)]
             self.restoreCursor()
