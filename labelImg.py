@@ -620,14 +620,15 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def onFolderDoubleClickedFuncGroup(self, argv):
         if self.mayContinue():
+            self.canvas.resetState()
             self.setCurrentCaseByFolderOpened(*argv)
             self.markAnotatedGroupsAndImages()
 
     def onIDPreviewClickFuncGroup(self, imagePreview: ImagePreviewItem):
         if self.mayContinue():
+            self.canvas.resetState()
             self.markAnotatedImages()
             self.setCurrentId(imagePreview.data.extra['id'])
-
 
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Control:
