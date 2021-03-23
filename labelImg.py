@@ -452,8 +452,6 @@ class MainWindow(QMainWindow, WindowMixin):
         # Application state.
         self.imageDataRepository = ImageDataRepository()
         self.anotatedCaseRepository = CaseRepository()
-        self._unsavedAppendedAnotations = []
-        self._unsavedDeletedAnotations = []
         self._currentImageDataItem = None
         self._currentCase = None
         self._currentId = None
@@ -585,13 +583,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.defaultAnotationSavePath = None
 
     @property
-    def unsavedAppendedAnotations(self) -> List[AnotationView]:
-        return self._unsavedAppendedAnotations
-
-    @property
-    def unsavedDeletedAnotations(self) -> List[AnotationView]:
-        return self._unsavedDeletedAnotations
-
+    def currentImageAnotationsView(self)-> List[AnotationView]:
+        return self.canvas.anotationsViews
 
     @property
     def currentImageDataItem(self) -> ImageDataModel:
@@ -706,8 +699,6 @@ class MainWindow(QMainWindow, WindowMixin):
         self.shapesToItems.clear()
         self.labelList.clear()
         self.labelFile = None
-        self._unsavedAppendedAnotations = []
-        self._unsavedDeletedAnotations = []
         self.canvas.resetState()
         self.labelCoordinates.clear()
         self.comboBox.cb.clear()
@@ -841,7 +832,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.actions.shapeFillColor.setEnabled(selected)
 
     def createNewShape(self, shape: AnotationView):
-        self.unsavedAppendedAnotations.append(shape)
+        # this shape whas appended in canvas 
         self.addLabel(shape)
 
 
@@ -867,10 +858,6 @@ class MainWindow(QMainWindow, WindowMixin):
         self.labelList.takeItem(self.labelList.row(item))
         del self.shapesToItems[shape]
         del self.itemsToShapes[item]
-        if shape in self.unsavedAppendedAnotations:
-            self.unsavedAppendedAnotations.remove(shape)
-        else:
-            self.unsavedDeletedAnotations.append(shape)
         self.updateComboBox()
 
     def updateComboBox(self):
@@ -886,13 +873,12 @@ class MainWindow(QMainWindow, WindowMixin):
         self.comboBox.update_items(uniqueTextList)
 
     def saveLabels(self, annotationFilePath):
-        for av in self.unsavedDeletedAnotations:
-            anotatedImage = self.currentCase.getAnotatedImage(self.currentImageDataItem.localPath)
-            if anotatedImage is not None:
-                if av.model in anotatedImage.anotations:
-                    anotatedImage.anotations.remove(av.model)
+        anotatedImage = self.currentCase.getAnotatedImage(self.currentImageDataItem.localPath)
+        if anotatedImage is not None:
+            anotatedImage.clearAnotations()
 
-        for av in self.unsavedAppendedAnotations:
+        print(len(self.currentImageAnotationsView))
+        for av in self.currentImageAnotationsView:
             self.currentCase.addAnotation(
                 imagePath=self.currentImageDataItem.localPath,
                 imageId=self.currentImageDataItem.extra['id'],
@@ -905,8 +891,6 @@ class MainWindow(QMainWindow, WindowMixin):
             outputPathWithoutExtention = os.path.splitext(annotationFilePath)[0],
             writer=self.anotationWriter
         )
-        self._unsavedAppendedAnotations = []
-        self._unsavedDeletedAnotations = []
 
     def copySelectedShape(self):
         shape = self.canvas.copySelectedShape()
@@ -1153,6 +1137,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def loadAnotationsOnCanvas(self):
         anotatedImage = self.currentCase.getAnotatedImage(self.currentImageDataItem.localPath)
+        
         if anotatedImage is None:
             self.canvas.setEnabled(True)
             self.toggleActions(True)
@@ -1163,10 +1148,10 @@ class MainWindow(QMainWindow, WindowMixin):
         views = []
         for am in anotatedImage.anotations:
             av = AnotationView()
-            av.setModel(am)
+            av.setModel(am.copy())
             av.shapeView.close()
             views.append(av)
-
+        
         self.addAnotationViewItemsLableToShapeList(views)
         self.canvas.loadShapes(views)
         self.canvas.setEnabled(True)
